@@ -19,7 +19,13 @@ namespace Mygod.SSPanel.Checkin
                 if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape) break;
                 if (NetworkInterface.GetIsNetworkAvailable())
                 {
-                    config.DoCheckin();
+                    var next = config.DoCheckin();
+                    if (next == DateTime.MinValue)
+                    {
+                        Log.WriteLine("WARN", "Main", "No sites configured. Closing...");
+                        break;
+                    }
+                    if (next > DateTime.Now) Console.WriteLine("Checkin finished. Next checkin time: {0}", next);
                     if (DateTime.Now - lastUpdateCheckTime > TimeSpan.FromDays(1))
                     {
                         lastUpdateCheckTime = DateTime.Now;

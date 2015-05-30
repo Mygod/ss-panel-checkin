@@ -38,7 +38,7 @@ namespace Mygod.SSPanel.Checkin
             File.WriteAllText(path, string.Join(Environment.NewLine, this.Select(s => s.ToString())));
         }
 
-        public void DoCheckin()
+        public DateTime DoCheckin()
         {
             var modified = false;
             Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now), site =>
@@ -57,6 +57,7 @@ namespace Mygod.SSPanel.Checkin
                 }
             });
             if (modified) Save();
+            return queue.Count == 0 ? DateTime.MinValue : queue.First().NextCheckinTime;
         }
     }
 
