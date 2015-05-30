@@ -7,18 +7,19 @@ namespace Mygod.SSPanel.Checkin
 {
     static class Program
     {
-        private static readonly Config Config = new Config("config.csv");
+        private static Config config;
         private static DateTime lastUpdateCheckTime = DateTime.MinValue;
 
-        private static void Main()
+        private static void Main(string[] args)
         {
+            config = new Config(args == null || args.Length <= 0 ? "config.csv" : args[0]);
             Log.WriteLine("INFO", "Main", "ss-panel-checkin initialized, press Esc to exit.");
             while (true)
             {
                 if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape) break;
                 if (NetworkInterface.GetIsNetworkAvailable())
                 {
-                    Config.DoCheckin();
+                    config.DoCheckin();
                     if (DateTime.Now - lastUpdateCheckTime > TimeSpan.FromDays(1))
                     {
                         lastUpdateCheckTime = DateTime.Now;
