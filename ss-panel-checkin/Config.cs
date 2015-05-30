@@ -168,7 +168,7 @@ namespace Mygod.SSPanel.Checkin
                     var match = ResultAnalyzer.Match(str);
                     if (match.Success)
                     {
-                        var bandwidth = long.Parse(match.Groups[1].Value);
+                        var bandwidth = long.Parse(match.Groups[2].Value);
                         if (bandwidth == 0)
                         {
                             Log.WriteLine("WARN", ID, "Checkin succeeded but got 0MB. Reiniting.");
