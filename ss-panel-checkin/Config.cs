@@ -15,6 +15,7 @@ namespace Mygod.SSPanel.Checkin
         public Config(string path)
         {
             this.path = path;
+            if (!File.Exists(path)) return;
             using (var parser = new TextFieldParser(path))
             {
                 parser.TextFieldType = FieldType.Delimited;
