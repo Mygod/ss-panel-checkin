@@ -99,7 +99,7 @@ namespace Mygod.SSPanel.Checkin
         }
 
         private CookieContainer cookie;
-        public CookieContainer Cookie
+        private CookieContainer Cookie
         {
             get
             {
