@@ -8,7 +8,7 @@ namespace Mygod.SSPanel.Checkin
     static class Program
     {
         private static Config config;
-        private static DateTime lastUpdateCheckTime = DateTime.MinValue;
+        private static DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime;
 
         private static void Main(string[] args)
         {
@@ -25,7 +25,8 @@ namespace Mygod.SSPanel.Checkin
                         Log.WriteLine("WARN", "Main", "No sites configured. Closing...");
                         break;
                     }
-                    if (next > DateTime.Now) Console.WriteLine("Checkin finished. Next checkin time: {0}", next);
+                    if (next > DateTime.Now && next > nextCheckinTime)
+                        Console.WriteLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
                     if (DateTime.Now - lastUpdateCheckTime > TimeSpan.FromDays(1))
                     {
                         lastUpdateCheckTime = DateTime.Now;
