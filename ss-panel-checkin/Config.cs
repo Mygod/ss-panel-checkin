@@ -62,15 +62,17 @@ namespace Mygod.SSPanel.Checkin
 
     class Site : IComparable<Site>
     {
-        public Site(string[] fields)
+        public Site(IReadOnlyList<string> fields)
         {
             ID = fields[0];
+            if (ID == "Main") Log.WriteLine("WARN", ID,
+                "The ID of this site is Main. While this is acceptable, it could make log file confusing.");
             Domain = fields[1].TrimEnd('/');
             UID = fields[2];
             UserEmail = fields[3];
             UserName = fields[4];
             UserPwd = fields[5];
-            if (fields.Length <= 6) return;
+            if (fields.Count <= 6) return;
             DateTime.TryParse(fields[6], out LastCheckinTime);
             double.TryParse(fields[7], out Interval);
             long.TryParse(fields[8], out BandwidthCount);
