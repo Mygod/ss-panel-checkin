@@ -2,6 +2,7 @@
 using System.Net.NetworkInformation;
 using System.Threading;
 using Mygod.Net;
+using Mygod.Windows;
 
 namespace Mygod.SSPanel.Checkin
 {
@@ -13,7 +14,7 @@ namespace Mygod.SSPanel.Checkin
         private static void Main(string[] args)
         {
             config = new Config(args == null || args.Length <= 0 ? "config.csv" : args[0]);
-            Log.WriteLine("INFO", "Main", "ss-panel-checkin initialized, press Esc to exit.");
+            Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, press Esc to exit.", CurrentApp.Version);
             while (true)
             {
                 if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape) break;
