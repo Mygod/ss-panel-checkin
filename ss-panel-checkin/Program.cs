@@ -13,7 +13,7 @@ namespace Mygod.SSPanel.Checkin
         private static Config config;
         private static DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime;
         private static volatile bool running = true;
-        private static readonly ManualResetEvent Terminator = new ManualResetEvent(false);
+        private static readonly AutoResetEvent Terminator = new AutoResetEvent(false);
 
         private static void Init(IReadOnlyList<string> args)
         {
@@ -87,15 +87,9 @@ namespace Mygod.SSPanel.Checkin
                     }
                     var t = DateTime.Now - lastUpdateCheckTime + TimeSpan.FromDays(1);
                     if (t < span) span = t;
-                    if (!running) continue;
-                    Terminator.Reset();
-                    Terminator.WaitOne(span);
+                    if (running) Terminator.WaitOne(span);
                 }
-                else if (running)
-                {
-                    Terminator.Reset();
-                    Terminator.WaitOne(-1);
-                }
+                else if (running) Terminator.WaitOne(-1);
         }
     }
 }
