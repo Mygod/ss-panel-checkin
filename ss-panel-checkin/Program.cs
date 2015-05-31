@@ -28,12 +28,17 @@ namespace Mygod.SSPanel.Checkin
             Init(args);
             var background = new Thread(BackgroundWork);
             background.Start();
-            Log.ConsoleLine("Available actions:{0}[R]eload config{0}[S]tatistics{0}[Q]uit", Environment.NewLine + "  ");
+            Log.ConsoleLine("Available actions:{0}Re[f]etch all sites' checkin time{0}[R]eload config{0}[S]tatistics" +
+                            "{0}[Q]uit", Environment.NewLine + "  ");
             var key = Console.ReadKey(true).Key;
             while (key != ConsoleKey.Q)
             {
                 switch (key)
                 {
+                    case ConsoleKey.F:
+                        config.NeedsRefetch = true;
+                        Terminator.Set();
+                        break;
                     case ConsoleKey.R:
                         Init(args);
                         Terminator.Set();
@@ -74,7 +79,7 @@ namespace Mygod.SSPanel.Checkin
                     }
                     else
                     {
-                        if (next > DateTime.Now && next > nextCheckinTime)
+                        if (next > DateTime.Now && next != nextCheckinTime)
                             Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
                         span = nextCheckinTime - DateTime.Now;
                     }

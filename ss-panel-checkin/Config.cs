@@ -33,6 +33,7 @@ namespace Mygod.SSPanel.Checkin
 
         private readonly SortedSet<Site> queue = new SortedSet<Site>();
         private readonly string path;
+        public volatile bool NeedsRefetch;
 
         private void Save()
         {
@@ -42,7 +43,25 @@ namespace Mygod.SSPanel.Checkin
         public DateTime DoCheckin()
         {
             var modified = false;
-            Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), site =>
+            if (NeedsRefetch)
+            {
+                queue.Clear();
+                Parallel.ForEach(this, site =>
+                {
+                    try
+                    {
+                        if (site.Init()) modified = true;
+                        queue.Add(site);
+                    }
+                    catch (Exception exc)
+                    {
+                        Log.WriteLine("FATAL", site.ID, exc.GetMessage());
+                    }
+                });
+                Log.WriteLine("INFO", "Main", "Manual refetch finished.");
+                NeedsRefetch = false;
+            }
+            else Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), site =>
             {
                 queue.Remove(site);
                 try
