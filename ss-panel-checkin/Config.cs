@@ -166,6 +166,8 @@ namespace Mygod.SSPanel.Checkin
             }
             catch (WebException exc)
             {
+                var response = exc.Response as HttpWebResponse;
+                if (response != null && response.StatusCode == HttpStatusCode.NotFound) throw;
                 Log.WriteLine("ERROR", ID, "Initialization failed. Message: {0}", exc.Message);
                 return false;
             }
@@ -211,6 +213,8 @@ namespace Mygod.SSPanel.Checkin
             }
             catch (WebException exc)
             {
+                var response = exc.Response as HttpWebResponse;
+                if (response != null && response.StatusCode == HttpStatusCode.NotFound) throw;
                 Log.WriteLine("ERROR", ID, "Checkin failed. Message: {0}", exc.Message);
             }
             return false;
