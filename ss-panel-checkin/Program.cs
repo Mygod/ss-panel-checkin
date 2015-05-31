@@ -10,25 +10,53 @@ namespace Mygod.SSPanel.Checkin
     {
         private static Config config;
         private static DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime;
+        private static volatile bool running = true;
+        private static readonly ManualResetEvent Terminator = new ManualResetEvent(false);
 
         private static void Main(string[] args)
         {
+            NetworkChange.NetworkAvailabilityChanged += NetworkAvailabilityChanged;
             config = new Config(args == null || args.Length <= 0 ? "config.csv" : args[0]);
-            Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, compiled on {1}, press Esc to exit.",
+            var background = new Thread(BackgroundWork);
+            background.Start();
+            Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, compiled on {1}.",
                           CurrentApp.Version, CurrentApp.CompilationTime);
-            while (true)
+            Log.ConsoleLine("Available actions:{0}[Q]uit", Environment.NewLine);
+            var key = Console.ReadKey(true).Key;
+            while (key != ConsoleKey.Q)
             {
-                if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape) break;
+                // More actions...
+                key = Console.ReadKey(true).Key;
+            }
+            running = false;
+            Terminator.Set();
+            background.Join();
+            Log.WriteLine("INFO", "Main", "ss-panel-checkin has been closed.");
+        }
+
+        private static void NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
+        {
+            if (e.IsAvailable) Terminator.Set();
+        }
+
+        private static void BackgroundWork()
+        {
+            while (running)
                 if (NetworkInterface.GetIsNetworkAvailable())
                 {
+                    TimeSpan span;
                     var next = config.DoCheckin();
                     if (next == DateTime.MinValue)
                     {
-                        Log.WriteLine("WARN", "Main", "No sites configured. Closing...");
-                        break;
+                        Log.WriteLine("WARN", "Main", "No sites configured or all of them has failed.");
+                        span = TimeSpan.MaxValue;
                     }
-                    if (next > DateTime.Now && next > nextCheckinTime)
-                        Console.WriteLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
+                    else
+                    {
+                        if (next > DateTime.Now && next > nextCheckinTime)
+                            Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
+                        span = nextCheckinTime - DateTime.Now;
+                    }
                     if (DateTime.Now - lastUpdateCheckTime > TimeSpan.FromDays(1))
                     {
                         lastUpdateCheckTime = DateTime.Now;
@@ -36,10 +64,11 @@ namespace Mygod.SSPanel.Checkin
                         if (!string.IsNullOrWhiteSpace(url))
                             Log.WriteLine("INFO", "Main", "Update available. Download at: {0}", url);
                     }
+                    var t = DateTime.Now - lastUpdateCheckTime + TimeSpan.FromDays(1);
+                    if (t < span) span = t;
+                    Terminator.WaitOne(span);
                 }
-                Thread.Sleep(1000);
-            }
-            Log.WriteLine("INFO", "Main", "ss-panel-checkin has been closed.");
+                else Terminator.WaitOne(-1);
         }
     }
 }
