@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading;
 using Mygod.Net;
@@ -27,7 +28,7 @@ namespace Mygod.SSPanel.Checkin
             Init(args);
             var background = new Thread(BackgroundWork);
             background.Start();
-            Log.ConsoleLine("Available actions:{0}[R]eload config{0}[Q]uit", Environment.NewLine + "  ");
+            Log.ConsoleLine("Available actions:{0}[R]eload config{0}[S]tatistics{0}[Q]uit", Environment.NewLine + "  ");
             var key = Console.ReadKey(true).Key;
             while (key != ConsoleKey.Q)
             {
@@ -36,6 +37,14 @@ namespace Mygod.SSPanel.Checkin
                     case ConsoleKey.R:
                         Init(args);
                         Terminator.Set();
+                        break;
+                    case ConsoleKey.S:
+                        Log.ConsoleLine("ID\tAverage\tTotal{0}{1}", Environment.NewLine, string.Join(
+                            Environment.NewLine, from site in config
+                                                 let avg = (double)site.BandwidthCount / site.CheckinCount
+                                                 orderby avg descending
+                                                 select string.Format("{0}\t{1}\t{2}", site.ID, avg, 
+                                                                      site.BandwidthCount)));
                         break;
                 }
                 key = Console.ReadKey(true).Key;
