@@ -14,6 +14,7 @@ namespace Mygod.SSPanel.Checkin
         private static DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime;
         private static volatile bool running = true;
         private static readonly AutoResetEvent Terminator = new AutoResetEvent(false);
+        private static readonly TimeSpan Day = TimeSpan.FromDays(1), Second = TimeSpan.FromSeconds(1);
 
         private static void Init(IReadOnlyList<string> args)
         {
@@ -83,16 +84,22 @@ namespace Mygod.SSPanel.Checkin
                             Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
                         span = nextCheckinTime - DateTime.Now;
                     }
-                    if (DateTime.Now - lastUpdateCheckTime > TimeSpan.FromDays(1))
-                    {
-                        lastUpdateCheckTime = DateTime.Now;
-                        var url = WebsiteManager.Url;
-                        if (!string.IsNullOrWhiteSpace(url))
-                            Log.WriteLine("INFO", "Main", "Update available. Download at: {0}", url);
-                    }
-                    var t = DateTime.Now - lastUpdateCheckTime + TimeSpan.FromDays(1);
+                    if (DateTime.Now - lastUpdateCheckTime > Day)
+                        try
+                        {
+                            var url = WebsiteManager.Url;
+                            if (!string.IsNullOrWhiteSpace(url))
+                                Log.WriteLine("INFO", "Main", "Update available. Download at: {0}", url);
+                            lastUpdateCheckTime = DateTime.Now;
+                        }
+                        catch (Exception exc)
+                        {
+                            Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: {0}",
+                                          exc.GetMessage());
+                        }
+                    var t = DateTime.Now - lastUpdateCheckTime + Day;
                     if (t < span) span = t;
-                    if (running) Terminator.WaitOne(span);
+                    if (running) Terminator.WaitOne(span < Second ? Second : span);
                 }
                 else if (running) Terminator.WaitOne(-1);
         }
