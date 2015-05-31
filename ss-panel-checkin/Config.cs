@@ -42,19 +42,17 @@ namespace Mygod.SSPanel.Checkin
         public DateTime DoCheckin()
         {
             var modified = false;
-            Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now), site =>
+            Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), site =>
             {
+                queue.Remove(site);
                 try
                 {
-                    if (!site.DoCheckin()) return;
-                    modified = true;
-                    queue.Remove(site);
+                    if (site.DoCheckin()) modified = true;
                     queue.Add(site);
                 }
                 catch (Exception exc)
                 {
                     Log.WriteLine("FATAL", site.ID, exc.GetMessage());
-                    queue.Remove(site);
                 }
             });
             if (modified) Save();
