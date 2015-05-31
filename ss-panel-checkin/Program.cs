@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Threading;
 using Mygod.Net;
@@ -13,19 +14,30 @@ namespace Mygod.SSPanel.Checkin
         private static volatile bool running = true;
         private static readonly ManualResetEvent Terminator = new ManualResetEvent(false);
 
+        private static void Init(IReadOnlyList<string> args)
+        {
+            config = new Config(args == null || args.Count <= 0 ? "config.csv" : args[0]);
+            Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, compiled on {1}.",
+                          CurrentApp.Version, CurrentApp.CompilationTime);
+        }
+
         private static void Main(string[] args)
         {
             NetworkChange.NetworkAvailabilityChanged += NetworkAvailabilityChanged;
-            config = new Config(args == null || args.Length <= 0 ? "config.csv" : args[0]);
+            Init(args);
             var background = new Thread(BackgroundWork);
             background.Start();
-            Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, compiled on {1}.",
-                          CurrentApp.Version, CurrentApp.CompilationTime);
-            Log.ConsoleLine("Available actions:{0}[Q]uit", Environment.NewLine);
+            Log.ConsoleLine("Available actions:{0}[R]eload config{0}[Q]uit", Environment.NewLine + "  ");
             var key = Console.ReadKey(true).Key;
             while (key != ConsoleKey.Q)
             {
-                // More actions...
+                switch (key)
+                {
+                    case ConsoleKey.R:
+                        Init(args);
+                        Terminator.Set();
+                        break;
+                }
                 key = Console.ReadKey(true).Key;
             }
             running = false;
@@ -66,9 +78,15 @@ namespace Mygod.SSPanel.Checkin
                     }
                     var t = DateTime.Now - lastUpdateCheckTime + TimeSpan.FromDays(1);
                     if (t < span) span = t;
+                    if (!running) continue;
+                    Terminator.Reset();
                     Terminator.WaitOne(span);
                 }
-                else Terminator.WaitOne(-1);
+                else if (running)
+                {
+                    Terminator.Reset();
+                    Terminator.WaitOne(-1);
+                }
         }
     }
 }
