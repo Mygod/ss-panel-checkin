@@ -14,7 +14,7 @@ namespace Mygod.SSPanel.Checkin
         private static Config config;
         private static volatile bool running = true;
         private static readonly AutoResetEvent Terminator = new AutoResetEvent(false);
-        private static readonly TimeSpan Day = TimeSpan.FromDays(1), Second = TimeSpan.FromSeconds(1);
+        private static readonly TimeSpan Day = TimeSpan.FromDays(1);
 
         private static void Init(IReadOnlyList<string> args)
         {
@@ -69,6 +69,8 @@ namespace Mygod.SSPanel.Checkin
         private static void BackgroundWork()
         {
             DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime = DateTime.MinValue;
+            var failCount = 0;
+            var random = new Random();
             while (running)
                 if (NetworkTester.IsNetworkAvailable())
                 {
@@ -82,7 +84,11 @@ namespace Mygod.SSPanel.Checkin
                     else
                     {
                         if (next > DateTime.Now && next != nextCheckinTime)
+                        {
+                            failCount = 0;  // reset counter
                             Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
+                        }
+                        else if (failCount < 10) ++failCount;
                         span = nextCheckinTime - DateTime.Now;
                     }
                     if (DateTime.Now - lastUpdateCheckTime > Day)
@@ -100,9 +106,14 @@ namespace Mygod.SSPanel.Checkin
                         }
                     var t = DateTime.Now - lastUpdateCheckTime + Day;
                     if (t < span) span = t;
-                    if (running) Terminator.WaitOne(span < Second ? Second : span);
+                    var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
+                    if (running) Terminator.WaitOne(span < min ? min : span);
                 }
-                else if (running) Terminator.WaitOne(-1);
+                else
+                {
+                    failCount = 0;  // reset counter
+                    if (running) Terminator.WaitOne(-1);
+                }
         }
     }
 }
