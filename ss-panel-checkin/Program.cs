@@ -92,9 +92,9 @@ namespace Mygod.SSPanel.Checkin
                     }
                     else
                     {
-                        if (next > DateTime.Now && next != nextCheckinTime)
+                        if (next <= DateTime.Now) failed = true;
+                        else if (next != nextCheckinTime)
                             Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
-                        else failed = true;
                         span = nextCheckinTime - DateTime.Now;
                     }
                     if (DateTime.Now - lastUpdateCheckTime > Day)
