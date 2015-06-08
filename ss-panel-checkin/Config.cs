@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.VisualBasic.FileIO;
 using Mygod.Text;
+// ReSharper disable InconsistentlySynchronizedField
 
 namespace Mygod.SSPanel.Checkin
 {
@@ -63,11 +64,11 @@ namespace Mygod.SSPanel.Checkin
             }
             else Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), site =>
             {
-                queue.Remove(site);
+                lock (queue) queue.Remove(site);
                 try
                 {
                     if (site.DoCheckin()) modified = true;
-                    queue.Add(site);
+                    lock (queue) queue.Add(site);
                 }
                 catch (Exception exc)
                 {
