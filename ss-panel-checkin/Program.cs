@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading;
 using Mygod.Net;
+using Mygod.Net.NetworkInformation;
 using Mygod.Windows;
 
 namespace Mygod.SSPanel.Checkin
@@ -63,13 +64,13 @@ namespace Mygod.SSPanel.Checkin
 
         private static void NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
         {
-            if (e.IsAvailable) Terminator.Set();
+            if (e.IsAvailable) Terminator.Set();    // wake up the background thread to test network connection
         }
 
         private static void BackgroundWork()
         {
             while (running)
-                if (NetworkInterface.GetIsNetworkAvailable())
+                if (NetworkTester.IsNetworkAvailable())
                 {
                     TimeSpan span;
                     var next = config.DoCheckin();
