@@ -83,6 +83,7 @@ namespace Mygod.SSPanel.Checkin
                 if (NetworkTester.IsNetworkAvailable())
                 {
                     TimeSpan span;
+                    var failed = false;
                     var next = config.DoCheckin();
                     if (next == DateTime.MinValue)
                     {
@@ -92,11 +93,8 @@ namespace Mygod.SSPanel.Checkin
                     else
                     {
                         if (next > DateTime.Now && next != nextCheckinTime)
-                        {
-                            failCount = 0;  // reset counter
                             Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
-                        }
-                        else if (failCount < 10) ++failCount;
+                        else failed = true;
                         span = nextCheckinTime - DateTime.Now;
                     }
                     if (DateTime.Now - lastUpdateCheckTime > Day)
@@ -111,7 +109,13 @@ namespace Mygod.SSPanel.Checkin
                         {
                             Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: {0}",
                                           exc.GetMessage());
+                            failed = true;
                         }
+                    if (failed)
+                    {
+                        if (failCount < 10) ++failCount;
+                    }
+                    else failCount = 0; // reset counter
                     var t = DateTime.Now - lastUpdateCheckTime + Day;
                     if (t < span) span = t;
                     var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
