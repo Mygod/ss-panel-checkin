@@ -12,7 +12,6 @@ namespace Mygod.SSPanel.Checkin
     static class Program
     {
         private static Config config;
-        private static DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime;
         private static volatile bool running = true;
         private static readonly AutoResetEvent Terminator = new AutoResetEvent(false);
         private static readonly TimeSpan Day = TimeSpan.FromDays(1), Second = TimeSpan.FromSeconds(1);
@@ -69,6 +68,7 @@ namespace Mygod.SSPanel.Checkin
 
         private static void BackgroundWork()
         {
+            DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime = DateTime.MinValue;
             while (running)
                 if (NetworkTester.IsNetworkAvailable())
                 {
