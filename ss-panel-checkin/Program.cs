@@ -25,6 +25,7 @@ namespace Mygod.SSPanel.Checkin
 
         private static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += Crashed;
             NetworkChange.NetworkAvailabilityChanged += NetworkAvailabilityChanged;
             Init(args);
             var background = new Thread(BackgroundWork);
@@ -59,6 +60,13 @@ namespace Mygod.SSPanel.Checkin
             Terminator.Set();
             background.Join();
             Log.WriteLine("INFO", "Main", "ss-panel-checkin has been closed.");
+        }
+
+        private static void Crashed(object sender, UnhandledExceptionEventArgs e)
+        {
+            var exc = e.ExceptionObject as Exception;
+            if (exc == null) return;
+            Log.WriteLine("FATAL", "Main", exc.GetMessage());
         }
 
         private static void NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
