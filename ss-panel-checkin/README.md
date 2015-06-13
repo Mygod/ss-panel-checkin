@@ -11,3 +11,8 @@ After that, just double click on `ss-panel-checkin.exe` and everything will just
 
 ## Custom configuration path
 The program use `config.csv` under its current working directory. However, you can supply your custom csv file path as its first command line argument to use the file.
+
+## Some sites are not being checked in on time or at all?
+As soon as one triggers a fatal error, it will be removed from the queue to reduce system resources usage. When a normal error occurs several times in a row, the retry timeout will increase exponentially from 1 seconds up to 17 minutes (1024s) to reduce system resources usage even more.
+
+If you don't want this happen, press `R` to reload the config and the program will reset the queue and start processing again. (however the fail attempts counter will never reset unless everything is going well or the program is closed)
