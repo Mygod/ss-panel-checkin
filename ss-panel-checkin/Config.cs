@@ -175,6 +175,7 @@ namespace Mygod.SSPanel.Checkin
             catch (IOException exc)
             {
                 Log.WriteLine("ERROR", ID, "Checkin failed. Message: {0}", exc.Message);
+                return false;
             }
         }
 
