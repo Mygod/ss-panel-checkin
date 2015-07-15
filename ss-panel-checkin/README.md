@@ -3,7 +3,9 @@ As we all know, the checkin feature in ss-panels is just a royal pain in the ass
 
 To use this program, create a file named `config.csv` under the same directory as the executive, and then add lines following the syntax:
 
-	Site name,http://example.com,1,b598e776@opayq.com,,my_lame_encrypted_password
+	http://www.myproxy.com:8080
+	Site name,[proxy|],http://example.com,1,b598e776@opayq.com,,my_lame_encrypted_password
+	Add more sites here
 
 You can view your uid, email, user name and encrypted password in the cookies. You should leave email or user name blank if the cookie doesn't provide the information to make the program work properly.
 

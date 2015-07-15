@@ -21,11 +21,13 @@ namespace Mygod.SSPanel.Checkin
             {
                 parser.TextFieldType = FieldType.Delimited;
                 parser.SetDelimiters(",");
+                var proxy = parser.ReadLine();
+                Proxy = string.IsNullOrWhiteSpace(proxy) ? null : new WebProxy(new Uri(proxy));
                 while (!parser.EndOfData)
                 {
                     var fields = parser.ReadFields();
                     if (fields == null || fields.Length <= 0) continue;   // ignore empty lines
-                    var site = new Site(fields);
+                    var site = new Site(fields, Proxy);
                     Add(site);
                     queue.Add(site);
                 }
@@ -35,6 +37,7 @@ namespace Mygod.SSPanel.Checkin
         private readonly SortedSet<Site> queue = new SortedSet<Site>();
         private readonly string path;
         public volatile bool NeedsRefetch;
+        public readonly WebProxy Proxy;
 
         private void Save()
         {
@@ -82,24 +85,28 @@ namespace Mygod.SSPanel.Checkin
 
     class Site : IComparable<Site>
     {
-        public Site(IReadOnlyList<string> fields)
+        public Site(IReadOnlyList<string> fields, WebProxy proxy)
         {
             ID = fields[0];
             if (ID == "Main") Log.WriteLine("WARN", ID,
                 "The ID of this site is Main. While this is acceptable, it could make log file confusing.");
-            Domain = fields[1].TrimEnd('/');
-            UID = fields[2];
-            UserEmail = fields[3];
-            UserName = fields[4];
-            UserPwd = fields[5];
-            if (fields.Count <= 6) return;
-            DateTime.TryParse(fields[6], out LastCheckinTime);
-            double.TryParse(fields[7], out Interval);
-            long.TryParse(fields[8], out BandwidthCount);
-            long.TryParse(fields[9], out CheckinCount);
+            UseProxy = !string.IsNullOrWhiteSpace(fields[1]);
+            Domain = fields[2].TrimEnd('/');
+            UID = fields[3];
+            UserEmail = fields[4];
+            UserName = fields[5];
+            UserPwd = fields[6];
+            if (fields.Count <= 7) return;
+            DateTime.TryParse(fields[7], out LastCheckinTime);
+            double.TryParse(fields[8], out Interval);
+            long.TryParse(fields[9], out BandwidthCount);
+            long.TryParse(fields[10], out CheckinCount);
+            Proxy = proxy;
         }
 
+        public readonly WebProxy Proxy;
         public readonly string ID, Domain, UID, UserEmail, UserName, UserPwd;
+        public readonly bool UseProxy;
         public DateTime LastCheckinTime = DateTime.MinValue;
         public double Interval = 22;
         public long BandwidthCount, CheckinCount;
@@ -113,9 +120,9 @@ namespace Mygod.SSPanel.Checkin
 
         public override string ToString()
         {
-            return string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}", Csv.Escape(ID), Csv.Escape(Domain),
-                Csv.Escape(UID), Csv.Escape(UserEmail), Csv.Escape(UserName), Csv.Escape(UserPwd), LastCheckinTime,
-                Interval, BandwidthCount, CheckinCount);
+            return string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", Csv.Escape(ID),
+                UseProxy ? "proxy" : string.Empty, Csv.Escape(Domain), Csv.Escape(UID), Csv.Escape(UserEmail),
+                Csv.Escape(UserName), Csv.Escape(UserPwd), LastCheckinTime, Interval, BandwidthCount, CheckinCount);
         }
 
         private CookieContainer cookie;
@@ -149,6 +156,7 @@ namespace Mygod.SSPanel.Checkin
         {
             var request = WebRequest.CreateHttp(Domain + "/user/index.php");
             request.CookieContainer = Cookie;
+            request.Proxy = UseProxy ? Proxy : null;
             try
             {
                 using (var response = request.GetResponse())
@@ -188,6 +196,7 @@ namespace Mygod.SSPanel.Checkin
             var request = WebRequest.CreateHttp(Domain + "/user/" +
                 (string.IsNullOrWhiteSpace(UserName) ? "_" : "do") + "checkin.php");    // old style
             request.CookieContainer = Cookie;
+            request.Proxy = UseProxy ? Proxy : null;
             try
             {
                 using (var response = request.GetResponse())

@@ -1,1 +1,2 @@
-Site name,http://example.com,1,b598e776@opayq.com,,my_lame_encrypted_password
+http://www.myproxy.com:8080
+Site name,[proxy|],http://example.com,1,b598e776@opayq.com,,my_lame_encrypted_password
