@@ -140,8 +140,8 @@ namespace Mygod.SSPanel.Checkin
         }
 
         private static readonly Regex IntervalFinder = new Regex(@"(\d+)小时内可以签到一次", RegexOptions.Compiled),
-            LastCheckinTimeFinder = new Regex("上次签到时间：?<code>(.+?)</code>",
-                RegexOptions.Compiled | RegexOptions.IgnoreCase),
+            LastCheckinTimeFinder = new Regex("上次签到时间：?<code>([^<]+?)</code>",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex("({\"msg\":\"\\\\u83b7\\\\u5f97\\\\u4e86|alert\\(\"签到成功，获得了)(\\d+) ?MB" +
                 "(\\\\u6d41\\\\u91cf\"}|流量!\"\\))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -160,8 +160,11 @@ namespace Mygod.SSPanel.Checkin
                     var str = reader.ReadToEnd();
                     var match = IntervalFinder.Match(str);
                     if (match.Success) Interval = int.Parse(match.Groups[1].Value);
+                    else Log.WriteLine("WARN", ID,
+                        "Unable to find checkin interval. Please report this site if possible.");
                     match = LastCheckinTimeFinder.Match(str);
                     if (match.Success) LastCheckinTime = DateTime.Parse(match.Groups[1].Value);
+                    else throw new FormatException("Unable to find last checkin time.");
                 }
                 return true;
             }
