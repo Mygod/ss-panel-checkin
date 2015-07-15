@@ -41,7 +41,8 @@ namespace Mygod.SSPanel.Checkin
 
         private void Save()
         {
-            File.WriteAllText(path, string.Join(Environment.NewLine, this.Select(s => s.ToString())));
+            File.WriteAllText(path, (Proxy == null ? string.Empty : Proxy.Address.ToString()) + Environment.NewLine +
+                string.Join(Environment.NewLine, this.Select(s => s.ToString())));
         }
 
         public DateTime DoCheckin()
