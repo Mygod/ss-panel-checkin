@@ -30,13 +30,16 @@ namespace Mygod.SSPanel.Checkin
             Init(args);
             var background = new Thread(BackgroundWork);
             background.Start();
-            Log.ConsoleLine("Available actions:{0}Re[f]etch all sites' checkin time{0}[R]eload config{0}[S]tatistics" +
-                            "{0}[Q]uit", Environment.NewLine + "  ");
+            Log.ConsoleLine("Available actions:{0}[A]ctivate worker{0}Re[f]etch all sites' checkin time{0}" +
+                            "[R]eload config{0}[S]tatistics{0}[Q]uit", Environment.NewLine + "  ");
             var key = Console.ReadKey(true).Key;
             while (key != ConsoleKey.Q)
             {
                 switch (key)
                 {
+                    case ConsoleKey.A:
+                        Terminator.Set();
+                        break;
                     case ConsoleKey.F:
                         config.NeedsRefetch = true;
                         Terminator.Set();
@@ -119,7 +122,9 @@ namespace Mygod.SSPanel.Checkin
                     var t = DateTime.Now - lastUpdateCheckTime + Day;
                     if (t < span) span = t;
                     var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
-                    if (running) Terminator.WaitOne(span < min ? min : span);
+                    if (span < min) span = min;
+                    if (failed) Log.ConsoleLine("Some sites has failed. Retrying in {0} seconds...", span.TotalSeconds);
+                    if (running) Terminator.WaitOne(span);
                 }
                 else
                 {
