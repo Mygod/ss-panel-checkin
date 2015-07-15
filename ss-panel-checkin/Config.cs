@@ -99,7 +99,7 @@ namespace Mygod.SSPanel.Checkin
             UserPwd = fields[6];
             if (fields.Count <= 7) return;
             DateTime.TryParse(fields[7], out LastCheckinTime);
-            double.TryParse(fields[8], out Interval);
+            int.TryParse(fields[8], out Interval);
             long.TryParse(fields[9], out BandwidthCount);
             long.TryParse(fields[10], out CheckinCount);
             Proxy = proxy;
@@ -109,9 +109,12 @@ namespace Mygod.SSPanel.Checkin
         public readonly string ID, Domain, UID, UserEmail, UserName, UserPwd;
         public readonly bool UseProxy;
         public DateTime LastCheckinTime = DateTime.MinValue;
-        public double Interval = 22;
+        public int Interval = 22;
         public long BandwidthCount, CheckinCount;
-        public DateTime NextCheckinTime { get { return LastCheckinTime.AddHours(Interval); } }
+        public DateTime NextCheckinTime
+        {
+            get { return Interval == -1 ? LastCheckinTime.Date.AddDays(1) : LastCheckinTime.AddHours(Interval); }
+        }
         public bool Ready { get { return LastCheckinTime > DateTime.MinValue; } }
 
         public int CompareTo(Site other)
@@ -169,6 +172,7 @@ namespace Mygod.SSPanel.Checkin
                     var str = reader.ReadToEnd();
                     var match = IntervalFinder.Match(str);
                     if (match.Success) Interval = int.Parse(match.Groups[1].Value);
+                    else if (str.Contains("每天可以签到一次。GMT+8时间的0点刷新。")) Interval = -1;
                     else Log.WriteLine("WARN", ID,
                         "Unable to find checkin interval. Please report this site if possible.");
                     match = LastCheckinTimeFinder.Match(str);
