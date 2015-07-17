@@ -12,7 +12,7 @@ namespace Mygod.SSPanel.Checkin
     static class Program
     {
         private static Config config;
-        private static volatile bool running = true;
+        private static volatile bool running = true, forceUpdate;
         private static readonly AutoResetEvent Terminator = new AutoResetEvent(false);
         private static readonly TimeSpan Day = TimeSpan.FromDays(1);
 
@@ -38,6 +38,7 @@ namespace Mygod.SSPanel.Checkin
                 switch (key)
                 {
                     case ConsoleKey.A:
+                        forceUpdate = true;
                         Terminator.Set();
                         break;
                     case ConsoleKey.F:
@@ -46,6 +47,7 @@ namespace Mygod.SSPanel.Checkin
                         break;
                     case ConsoleKey.R:
                         Init(args);
+                        forceUpdate = true;
                         Terminator.Set();
                         break;
                     case ConsoleKey.S:
@@ -96,7 +98,7 @@ namespace Mygod.SSPanel.Checkin
                     else
                     {
                         if (next <= DateTime.Now) failed = true;
-                        else if (next != nextCheckinTime)
+                        else if (forceUpdate || next != nextCheckinTime)
                             Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
                         span = nextCheckinTime - DateTime.Now;
                     }
