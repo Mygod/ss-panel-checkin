@@ -197,7 +197,8 @@ namespace Mygod.SSPanel.Checkin
 
         public bool DoCheckin()
         {
-            if (!Ready) return Init();
+            if (!(Ready || Init())) return false;
+            if (NextCheckinTime > DateTime.Now) return true;
             var request = WebRequest.CreateHttp(Domain + "/user/" +
                 (string.IsNullOrWhiteSpace(UserName) ? "_" : "do") + "checkin.php");    // old style
             request.CookieContainer = Cookie;
