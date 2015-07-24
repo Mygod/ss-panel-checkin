@@ -4,4 +4,4 @@ As we all know, the checkin feature in ss-panels is just a royal pain in the ass
 Issues/PRs are welcome. :-D
 
 ## Requirements
-.NET Framework 4.5.2
+.NET Framework 4.6
