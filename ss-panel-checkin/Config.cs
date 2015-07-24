@@ -18,7 +18,7 @@ namespace Mygod.SSPanel.Checkin
         [XmlElement("Site")] public List<Site> Sites = new List<Site>();
 
         [XmlIgnore] private SortedSet<Site> queue;
-        [XmlIgnore] public volatile bool NeedsRefetch, IsDirty = true;
+        [XmlIgnore] public volatile bool NeedsRefetch, IsDirty;
 
         public void Init()
         {
@@ -66,7 +66,7 @@ namespace Mygod.SSPanel.Checkin
     public class Site : IComparable<Site>
     {
         [XmlAttribute] public string ID, Root, UID, UserEmail, UserName, UserPwd;
-        [XmlAttribute, DefaultValue("Default")] public string Proxy;
+        [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute] public bool Disabled;
         [XmlAttribute] public DateTime LastCheckinTime = DateTime.MinValue;
         [XmlAttribute] public int Interval = 22;
@@ -110,7 +110,6 @@ namespace Mygod.SSPanel.Checkin
         {
             var request = WebRequest.CreateHttp(url);
             request.CookieContainer = Cookie;
-            if (string.IsNullOrWhiteSpace(Proxy)) Proxy = "Default";
             if (proxies.Contains(Proxy)) request.Proxy = proxies[Proxy].ToProxy();
             return request;
         }
