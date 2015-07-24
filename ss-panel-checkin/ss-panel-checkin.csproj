@@ -40,8 +40,8 @@
     <StartupObject>Mygod.SSPanel.Checkin.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\MygodLibrary\MygodLibrary\Helper.cs">
@@ -53,11 +53,11 @@
     <Compile Include="..\..\MygodLibrary\MygodLibrary\Net\WebsiteManager.cs">
       <Link>[References]\WebsiteManager.cs</Link>
     </Compile>
-    <Compile Include="..\..\MygodLibrary\MygodLibrary\Text\Csv.cs">
-      <Link>[References]\Csv.cs</Link>
-    </Compile>
     <Compile Include="..\..\MygodLibrary\MygodLibrary\Windows\CurrentApp.cs">
       <Link>[References]\CurrentApp.cs</Link>
+    </Compile>
+    <Compile Include="..\..\MygodLibrary\MygodLibrary\Xml\Serialization\XmlSerialization.cs">
+      <Link>[References]\XmlSerialization.cs</Link>
     </Compile>
     <Compile Include="Config.cs" />
     <Compile Include="Log.cs" />
@@ -68,9 +68,9 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="config-example.csv">
+    <Content Include="config-example.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
     <None Include="README.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

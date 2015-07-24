@@ -6,11 +6,13 @@ using System.Threading;
 using Mygod.Net;
 using Mygod.Net.NetworkInformation;
 using Mygod.Windows;
+using Mygod.Xml.Serialization;
 
 namespace Mygod.SSPanel.Checkin
 {
     static class Program
     {
+        private static string path;
         private static Config config;
         private static volatile bool running = true, forceUpdate;
         private static readonly AutoResetEvent Terminator = new AutoResetEvent(false);
@@ -18,7 +20,8 @@ namespace Mygod.SSPanel.Checkin
 
         private static void Init(IReadOnlyList<string> args)
         {
-            config = new Config(args == null || args.Count <= 0 ? "config.csv" : args[0]);
+            (config = XmlSerialization.DeserializeFromFile<Config>
+                (path = args == null || args.Count <= 0 ? "config.xml" : args[0])).Init();
             Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, compiled on {1}.",
                           CurrentApp.Version, CurrentApp.CompilationTime);
         }
@@ -52,7 +55,7 @@ namespace Mygod.SSPanel.Checkin
                         break;
                     case ConsoleKey.S:
                         Log.ConsoleLine("ID\tAverage\tTotal{0}{1}", Environment.NewLine, string.Join(
-                            Environment.NewLine, from site in config
+                            Environment.NewLine, from site in config.Sites
                                                  let avg = (double)site.BandwidthCount / site.CheckinCount
                                                  orderby avg descending
                                                  select $"{site.ID}\t{avg}\t{site.BandwidthCount}"));
@@ -89,6 +92,7 @@ namespace Mygod.SSPanel.Checkin
                     TimeSpan span;
                     var failed = false;
                     var next = config.DoCheckin();
+                    if (config.IsDirty) XmlSerialization.SerializeToFile(path, config);
                     if (next == DateTime.MinValue)
                     {
                         Log.WriteLine("WARN", "Main", "No sites configured or all of them has failed.");
