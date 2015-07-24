@@ -55,8 +55,7 @@ namespace Mygod.SSPanel.Checkin
                             Environment.NewLine, from site in config
                                                  let avg = (double)site.BandwidthCount / site.CheckinCount
                                                  orderby avg descending
-                                                 select string.Format("{0}\t{1}\t{2}", site.ID, avg, 
-                                                                      site.BandwidthCount)));
+                                                 select $"{site.ID}\t{avg}\t{site.BandwidthCount}"));
                         break;
                 }
                 key = Console.ReadKey(true).Key;

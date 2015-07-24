@@ -41,7 +41,7 @@ namespace Mygod.SSPanel.Checkin
 
         private void Save()
         {
-            File.WriteAllText(path, (Proxy == null ? string.Empty : Proxy.Address.ToString()) + Environment.NewLine +
+            File.WriteAllText(path, (Proxy?.Address.ToString() ?? string.Empty) + Environment.NewLine +
                 string.Join(Environment.NewLine, this.Select(s => s.ToString())));
         }
 
@@ -111,11 +111,9 @@ namespace Mygod.SSPanel.Checkin
         public DateTime LastCheckinTime = DateTime.MinValue;
         public int Interval = 22;
         public long BandwidthCount, CheckinCount;
-        public DateTime NextCheckinTime
-        {
-            get { return Interval == -1 ? LastCheckinTime.Date.AddDays(1) : LastCheckinTime.AddHours(Interval); }
-        }
-        public bool Ready { get { return LastCheckinTime > DateTime.MinValue; } }
+        public DateTime NextCheckinTime =>
+            Interval == -1 ? LastCheckinTime.Date.AddDays(1) : LastCheckinTime.AddHours(Interval);
+        public bool Ready => LastCheckinTime > DateTime.MinValue;
 
         public int CompareTo(Site other)
         {
@@ -124,9 +122,9 @@ namespace Mygod.SSPanel.Checkin
 
         public override string ToString()
         {
-            return string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", Csv.Escape(ID),
-                UseProxy ? "proxy" : string.Empty, Csv.Escape(Domain), Csv.Escape(UID), Csv.Escape(UserEmail),
-                Csv.Escape(UserName), Csv.Escape(UserPwd), LastCheckinTime, Interval, BandwidthCount, CheckinCount);
+            return $"{Csv.Escape(ID)},{(UseProxy ? "proxy" : string.Empty)},{Csv.Escape(Domain)},{Csv.Escape(UID)}," +
+                   $"{Csv.Escape(UserEmail)},{Csv.Escape(UserName)},{Csv.Escape(UserPwd)},{LastCheckinTime},{Interval}," +
+                   $"{BandwidthCount},{CheckinCount}";
         }
 
         private CookieContainer cookie;
