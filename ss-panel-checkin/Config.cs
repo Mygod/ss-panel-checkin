@@ -135,29 +135,27 @@ namespace Mygod.SSPanel.Checkin
                                 Log.WriteLine("WARN", ID,
                                "Unable to find checkin interval. Please report this site if possible.");
                             match = LastCheckinTimeFinder.Match(str);
-                            if (match.Success) LastCheckinTime = DateTime.Parse(match.Groups[1].Value);
-                            else throw new FormatException("Unable to find last checkin time.");
+                            if (!match.Success) throw new FormatException("Unable to find last checkin time.");
+                            LastCheckinTime = DateTime.Parse(match.Groups[1].Value);
+                            return true;
                         }
-                return true;
             }
             catch (WebException exc)
             {
                 var response = exc.Response as HttpWebResponse;
                 if (response != null && response.StatusCode == HttpStatusCode.NotFound) throw;
                 Log.WriteLine("ERROR", ID, "Initialization failed. Message: {0}", exc.Message);
-                return false;
             }
             catch (IOException exc)
             {
                 Log.WriteLine("ERROR", ID, "Checkin failed. Message: {0}", exc.Message);
-                return false;
             }
+            return false;
         }
 
         public bool DoCheckin(ProxyCollection proxies)
         {
-            if (!(Ready || Init(proxies))) return false;
-            if (NextCheckinTime > DateTime.Now) return true;
+            if (!(Ready || Init(proxies)) || NextCheckinTime > DateTime.Now) return false;
             var request = CreateRequest(Root + "/user/" + (string.IsNullOrWhiteSpace(UserName) ? "_" : "do") +
                 "checkin.php", proxies);    // check for old style
             try
