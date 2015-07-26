@@ -92,7 +92,11 @@ namespace Mygod.SSPanel.Checkin
                     TimeSpan span;
                     var failed = false;
                     var next = config.DoCheckin();
-                    if (config.IsDirty) XmlSerialization.SerializeToFile(path, config);
+                    if (config.IsDirty)
+                    {
+                        config.IsDirty = false;
+                        XmlSerialization.SerializeToFile(path, config);
+                    }
                     if (next == DateTime.MinValue)
                     {
                         Log.WriteLine("WARN", "Main", "No sites configured or all of them has failed.");
