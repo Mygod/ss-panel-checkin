@@ -30,7 +30,7 @@ namespace Mygod.SSPanel.Checkin
             if (NeedsRefetch)
             {
                 queue.Clear();
-                Parallel.ForEach(Sites, site =>
+                Parallel.ForEach(queue, site =>
                 {
                     try
                     {
