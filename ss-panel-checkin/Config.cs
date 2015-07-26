@@ -67,7 +67,7 @@ namespace Mygod.SSPanel.Checkin
     {
         [XmlAttribute] public string ID, Root, UID, UserEmail, UserName, UserPwd;
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
-        [XmlAttribute] public bool Disabled;
+        [XmlAttribute, DefaultValue(false)] public bool Disabled;
         [XmlAttribute] public DateTime LastCheckinTime = DateTime.MinValue;
         [XmlAttribute] public int Interval = 22;
         [XmlAttribute] public long BandwidthCount, CheckinCount;
