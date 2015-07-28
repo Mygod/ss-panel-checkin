@@ -66,6 +66,8 @@ namespace Mygod.SSPanel.Checkin
     public class Site : IComparable<Site>
     {
         [XmlAttribute] public string ID, Root, UID, UserEmail, UserName, UserPwd;
+        [XmlAttribute, DefaultValue("/user/index.php")] public string UrlMain = "/user/index.php";
+        [XmlAttribute] public string UrlCheckin;
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute, DefaultValue(false)] public bool Disabled;
         [XmlAttribute] public DateTime LastCheckinTime = DateTime.MinValue;
@@ -74,6 +76,8 @@ namespace Mygod.SSPanel.Checkin
         public DateTime NextCheckinTime => Interval == -1
             ? LastCheckinTime.Date.AddDays(1) : LastCheckinTime.AddHours(Interval);
         public bool Ready => LastCheckinTime > DateTime.MinValue;
+
+        [XmlElement("Cookie")] public CustomCookie[] AdditionalCookies;
 
         public int CompareTo(Site other)
         {
@@ -89,12 +93,17 @@ namespace Mygod.SSPanel.Checkin
                 {
                     var domain = new Uri(Root);
                     cookie = new CookieContainer();
-                    cookie.Add(domain, new Cookie("uid", UID));
-                    cookie.Add(domain, new Cookie("user_uid", UID));    // old style
+                    if (!string.IsNullOrWhiteSpace(UID))
+                    {
+                        cookie.Add(domain, new Cookie("uid", UID));
+                        cookie.Add(domain, new Cookie("user_uid", UID));    // old style
+                    }
                     if (!string.IsNullOrWhiteSpace(UserEmail)) cookie.Add(domain, new Cookie("user_email", UserEmail));
                     // old style
                     if (!string.IsNullOrWhiteSpace(UserName)) cookie.Add(domain, new Cookie("user_name", UserName));
-                    cookie.Add(domain, new Cookie("user_pwd", UserPwd));
+                    if (!string.IsNullOrWhiteSpace(UserPwd)) cookie.Add(domain, new Cookie("user_pwd", UserPwd));
+                    if (AdditionalCookies != null) foreach (var c in AdditionalCookies)
+                        cookie.Add(domain, new Cookie(c.Name, c.Value));
                 }
                 return cookie;
             }
@@ -116,7 +125,7 @@ namespace Mygod.SSPanel.Checkin
 
         public bool Init(ProxyCollection proxies)
         {
-            var request = CreateRequest(Root + "/user/index.php", proxies);
+            var request = CreateRequest(Root + UrlMain, proxies);
             try
             {
                 using (var response = request.GetResponse())
@@ -156,8 +165,10 @@ namespace Mygod.SSPanel.Checkin
         public bool DoCheckin(ProxyCollection proxies)
         {
             if (!(Ready || Init(proxies)) || NextCheckinTime > DateTime.Now) return false;
-            var request = CreateRequest(Root + "/user/" + (string.IsNullOrWhiteSpace(UserName) ? "_" : "do") +
-                "checkin.php", proxies);    // check for old style
+            var url = UrlCheckin;
+            if (string.IsNullOrWhiteSpace(url)) url = "/user/" + (string.IsNullOrWhiteSpace(UserName) ? "_" : "do") +
+                    "checkin.php";  // check for old style
+            var request = CreateRequest(Root + url, proxies);
             try
             {
                 using (var response = request.GetResponse())
@@ -242,5 +253,10 @@ namespace Mygod.SSPanel.Checkin
         {
             return string.IsNullOrWhiteSpace(Address?.ToString()) ? null : this;
         }
+    }
+
+    public class CustomCookie
+    {
+        [XmlAttribute] public string Name, Value;
     }
 }

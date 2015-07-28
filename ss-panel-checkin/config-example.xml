@@ -6,6 +6,9 @@
   <!-- Add one or more site using the following format -->
   <Site ID="Site name" Root="http://example.com" UID="1" UserEmail="b598e776@opayq.com"
         UserPwd="my_lame_encrypted_password" Proxy="My Proxy" />
+  <Site ID="A really customized site" Root="http://yolo.org" UrlMain="/user" UrlCheckin="/user/checkin">
+    <Cookie Name="session_id" Value="the_quick_brown_fox_jumps_over_the_lazy_dog" />
+  </Site>
   <!--
   # Descriptions for some of the attributes
     Root:
@@ -14,6 +17,14 @@
     UID, UserEmail, UserName, UserPwd:
       You can find the correct values for these fields in the cookies. You should leave email or user name blank if the
       cookie doesn't provide the information to make the program work properly.
+      You can also use Cookie element if a site isn't using its original implementation.
+    UrlMain:
+      Url for user center.
+      Default: `/user/index.php`
+    UrlCheckin:
+      Url for checkin. You can find that on the user center.
+      Default: (null)
+        * Auto detect whether it's `/user/_checkin.php` or `/user/docheckin.php`.
     Proxy:
       You can specify the id of which proxy to use. If the specified id was not found, system proxy will be used. If the
       specified proxy doesn't have an address, direct connection will be used.
