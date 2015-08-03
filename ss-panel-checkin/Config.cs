@@ -87,8 +87,8 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute, DefaultValue("/user/index.php")] public string UrlMain = "/user/index.php";
         [XmlAttribute] public string UrlCheckin;
         [XmlAttribute, DefaultValue("/user/node.php")] public string UrlNodes = "/user/node.php";
-        [XmlAttribute, DefaultValue(@"node_qr\.php\?id=(\d+)")] public string NodeFinder = @"node_qr\.php\?id=(\d+)";
-        [XmlAttribute, DefaultValue("/user/node_qr.php?id={0}")] public string UrlNode = "/user/node_qr.php?id={0}";
+        [XmlAttribute, DefaultValue(@"(node_qr\.php\?id=\d+)")] public string NodeFinder = @"(node_qr\.php\?id=\d+)";
+        [XmlAttribute, DefaultValue("/user/{0}")] public string UrlNode = "/user/{0}";
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute, DefaultValue(false)] public bool Disabled;
         [XmlAttribute] public DateTime LastCheckinTime = DateTime.MinValue;
@@ -160,8 +160,7 @@ namespace Mygod.SSPanel.Checkin
                 var match = IntervalFinder.Match(str);
                 if (match.Success) Interval = int.Parse(match.Groups[1].Value);
                 else if (str.Contains("每天可以签到一次。GMT+8时间的0点刷新。")) Interval = -1;
-                else
-                    Log.WriteLine("WARN", ID,
+                else Log.WriteLine("WARN", ID,
                    "Unable to find checkin interval. Please report this site if possible.");
                 match = LastCheckinTimeFinder.Match(str);
                 if (!match.Success) throw new FormatException("Unable to find last checkin time.");
@@ -231,16 +230,30 @@ namespace Mygod.SSPanel.Checkin
             try
             {
                 var nothing = true;
-                Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies), NodeFinder).OfType<Match>(), options,
-                                 node =>
+                Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies), NodeFinder).OfType<Match>()
+                    .Select(match => match.Groups[1].Value).Distinct(), options, node =>
                 {
-                    nothing = false;
-                    var str = ReadAll(Root + string.Format(UrlNode, node.Groups[1].Value), proxies);
+                    var str = ReadAll(Root + string.Format(UrlNode, node), proxies);
                     var match = NodeRawAnalyzer.Match(str);
-                    if (!match.Success && (match = NodeAnalyzer.Match(str)).Success)
-                        match = NodeRawAnalyzer.Match("ss://" + match.Groups[1].Value);
-                    if (match.Success) lock (result) result.AppendLine($"{{\"server\":\"{match.Groups[3].Value}\"," +
-                        $"\"server_port\":{match.Groups[4].Value},\"password\":\"{match.Groups[2].Value}\",\"method\":\"" +
+                    if (!match.Success)
+                    {
+                        match = NodeAnalyzer.Matches(str).OfType<Match>().Select(m =>
+                        {
+                            try
+                            {
+                                return NodeRawAnalyzer.Match("ss://" + Encoding.UTF8.GetString(Convert
+                                    .FromBase64String(m.Groups[1].Value)));
+                            }
+                            catch (FormatException)
+                            {
+                                return null;
+                            }
+                        }).FirstOrDefault(m => m?.Success == true);
+                        if (match == null) return;
+                    }
+                    nothing = false;
+                    lock (result) result.AppendLine($"{{\"server\":\"{match.Groups[3].Value}\",\"server_port\":" +
+                        $"{match.Groups[4].Value},\"password\":\"{match.Groups[2].Value}\",\"method\":\"" +
                         $"{match.Groups[1].Value.Trim()}\",\"remarks\":\"{ID}\"}},");
                 });
                 if (nothing) throw new Exception("Nothing found on this site.");
