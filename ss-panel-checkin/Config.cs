@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 // ReSharper disable InconsistentlySynchronizedField
@@ -70,14 +72,26 @@ namespace Mygod.SSPanel.Checkin
         public void FetchNodes(string path)
         {
             using (var writer = new StreamWriter(path) {AutoFlush = true})
-                Parallel.ForEach(queue.SkipWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), ParallelOptions,
-                                 site =>
+                Parallel.ForEach(queue.SkipWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(),
+                                 ParallelOptions, site =>
                 {
                     var result = site.FetchNodes(Proxies, ParallelOptions);
                     // ReSharper disable AccessToDisposedClosure
                     lock (writer) writer.Write(result);
                     // ReSharper restore AccessToDisposedClosure
                 });
+        }
+
+        public void TestProxies()
+        {
+            var nothing = true;
+            foreach (var proxy in Proxies.Where(proxy => !string.IsNullOrWhiteSpace(proxy.TestUrl)))
+            {
+                Log.ConsoleLine("INFO: Testing " + proxy.ID);
+                proxy.Test();
+                nothing = false;
+            }
+            if (nothing) Log.ConsoleLine("INFO: No proxy needs testing. Are you missing /Config/Proxy/@TestUrl?");
         }
     }
 
@@ -287,6 +301,41 @@ namespace Mygod.SSPanel.Checkin
         }
 
         [XmlIgnore] public ICredentials Credentials { get; set; }
+
+        [XmlAttribute] public string TestUrl;
+        [XmlAttribute, DefaultValue(10000)] public int TestTimeout = 10000;
+
+        public void Test()
+        {
+            var request = WebRequest.CreateHttp(TestUrl);
+            request.Proxy = ToProxy();
+            long size = 0;
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    var buffer = new byte[4096];
+                    using (var response = request.GetResponse())
+                    using (var stream = response.GetResponseStream())
+                    {
+                        int read;
+                        while ((read = stream.Read(buffer, 0, 4096)) > 0) size += read;
+                    }
+                }
+                catch { }
+            });
+            var stopwatch = Stopwatch.StartNew();
+            thread.Start();
+            if (thread.Join(TestTimeout)) stopwatch.Stop();
+            else
+            {
+                thread.Abort();
+                stopwatch.Stop();
+                Log.ConsoleLine("Test timed out.");
+            }
+            var secs = stopwatch.Elapsed.TotalSeconds;
+            Log.ConsoleLine($"Downloaded {Helper.GetSize(size)} in {secs}s, average {Helper.GetSize(size / secs)}/s");
+        }
 
         public Uri GetProxy(Uri destination)
         {

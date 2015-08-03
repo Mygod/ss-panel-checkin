@@ -34,7 +34,8 @@ namespace Mygod.SSPanel.Checkin
             var background = new Thread(BackgroundWork);
             background.Start();
             Log.ConsoleLine("Available actions:{0}[A]ctivate worker{0}Re[f]etch all sites' checkin time{0}" +
-                            "Fetch [n]odes{0}[R]eload config{0}[S]tatistics{0}[Q]uit", Environment.NewLine + "  ");
+                            "Fetch [n]odes{0}[R]eload config{0}[S]tatistics{0}Speed [t]est{0}[Q]uit",
+                            Environment.NewLine + "  ");
             var key = Console.ReadKey(true).Key;
             while (key != ConsoleKey.Q)
             {
@@ -63,6 +64,9 @@ namespace Mygod.SSPanel.Checkin
                                                  let avg = (double)site.BandwidthCount / site.CheckinCount
                                                  orderby avg descending
                                                  select $"{site.ID}\t{avg}\t{site.BandwidthCount}"));
+                        break;
+                    case ConsoleKey.T:
+                        config.TestProxies();
                         break;
                 }
                 key = Console.ReadKey(true).Key;
