@@ -21,7 +21,7 @@ namespace Mygod.SSPanel.Checkin
         private static void Init(IReadOnlyList<string> args)
         {
             (config = XmlSerialization.DeserializeFromFile<Config>
-                (path = args == null || args.Count <= 0 ? "config.xml" : args[0])).Init();
+                (path = args == null || args.Count <= 0 ? "config.xml" : args[0]) ?? new Config()).Init();
             Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, compiled on {1}.",
                           CurrentApp.Version, CurrentApp.CompilationTime);
         }
@@ -34,7 +34,7 @@ namespace Mygod.SSPanel.Checkin
             var background = new Thread(BackgroundWork);
             background.Start();
             Log.ConsoleLine("Available actions:{0}[A]ctivate worker{0}Re[f]etch all sites' checkin time{0}" +
-                            "[R]eload config{0}[S]tatistics{0}[Q]uit", Environment.NewLine + "  ");
+                            "Fetch [n]odes{0}[R]eload config{0}[S]tatistics{0}[Q]uit", Environment.NewLine + "  ");
             var key = Console.ReadKey(true).Key;
             while (key != ConsoleKey.Q)
             {
@@ -47,6 +47,10 @@ namespace Mygod.SSPanel.Checkin
                     case ConsoleKey.F:
                         config.NeedsRefetch = true;
                         Terminator.Set();
+                        break;
+                    case ConsoleKey.N:
+                        config.FetchNodes("nodes.json");
+                        Log.ConsoleLine("Saved to nodes.json.");
                         break;
                     case ConsoleKey.R:
                         Init(args);

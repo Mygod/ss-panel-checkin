@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -20,6 +21,9 @@ namespace Mygod.SSPanel.Checkin
         [XmlIgnore] private SortedSet<Site> queue;
         [XmlIgnore] public volatile bool NeedsRefetch, IsDirty;
 
+        [XmlAttribute, DefaultValue(16)] public int MaxConnections = 16;
+        public ParallelOptions ParallelOptions => new ParallelOptions {MaxDegreeOfParallelism = MaxConnections};
+
         public void Init()
         {
             queue = new SortedSet<Site>(Sites.Where(site => !site.Disabled));
@@ -30,7 +34,7 @@ namespace Mygod.SSPanel.Checkin
             if (NeedsRefetch)
             {
                 queue.Clear();
-                Parallel.ForEach(queue, site =>
+                Parallel.ForEach(queue, ParallelOptions, site =>
                 {
                     try
                     {
@@ -46,7 +50,8 @@ namespace Mygod.SSPanel.Checkin
                 NeedsRefetch = false;
             }
             else
-                Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), site =>
+                Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), ParallelOptions,
+                                 site =>
                 {
                     lock (queue) queue.Remove(site);
                     try
@@ -61,6 +66,19 @@ namespace Mygod.SSPanel.Checkin
                 });
             return queue.Count == 0 ? DateTime.MinValue : queue.First().NextCheckinTime;
         }
+
+        public void FetchNodes(string path)
+        {
+            using (var writer = new StreamWriter(path) {AutoFlush = true})
+                Parallel.ForEach(queue.SkipWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), ParallelOptions,
+                                 site =>
+                {
+                    var result = site.FetchNodes(Proxies, ParallelOptions);
+                    // ReSharper disable AccessToDisposedClosure
+                    lock (writer) writer.Write(result);
+                    // ReSharper restore AccessToDisposedClosure
+                });
+        }
     }
 
     public class Site : IComparable<Site>
@@ -68,6 +86,9 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute] public string ID, Root, UID, UserEmail, UserName, UserPwd;
         [XmlAttribute, DefaultValue("/user/index.php")] public string UrlMain = "/user/index.php";
         [XmlAttribute] public string UrlCheckin;
+        [XmlAttribute, DefaultValue("/user/node.php")] public string UrlNodes = "/user/node.php";
+        [XmlAttribute, DefaultValue(@"node_qr\.php\?id=(\d+)")] public string NodeFinder = @"node_qr\.php\?id=(\d+)";
+        [XmlAttribute, DefaultValue("/user/node_qr.php?id={0}")] public string UrlNode = "/user/node_qr.php?id={0}";
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute, DefaultValue(false)] public bool Disabled;
         [XmlAttribute] public DateTime LastCheckinTime = DateTime.MinValue;
@@ -113,41 +134,39 @@ namespace Mygod.SSPanel.Checkin
             LastCheckinTimeFinder = new Regex("上次签到时间：?<code>([^<]+?)</code>",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex("({\"msg\":\"\\\\u83b7\\\\u5f97\\\\u4e86|alert\\(\"签到成功，获得了)(\\d+) ?MB" +
-                "(\\\\u6d41\\\\u91cf\"}|流量!\"\\))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                "(\\\\u6d41\\\\u91cf\"}|流量!\"\\))", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+            NodeRawAnalyzer = new Regex(@"ss://(.+?):(.+?)@([A-Za-z0-9_\.\-]+?):(\d+)",
+                                        RegexOptions.Compiled | RegexOptions.IgnoreCase),
+            NodeAnalyzer = new Regex(@"ss://([A-Za-z0-9+/=]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private HttpWebRequest CreateRequest(string url, ProxyCollection proxies)
+        private string ReadAll(string url, ProxyCollection proxies)
         {
             var request = WebRequest.CreateHttp(url);
             request.CookieContainer = Cookie;
             if (proxies.Contains(Proxy)) request.Proxy = proxies[Proxy].ToProxy();
-            return request;
+            using (var response = request.GetResponse())
+                if (response.ResponseUri != request.RequestUri)
+                    throw new IOException($"Redirected to: {response.ResponseUri}. Possibly login failed.");
+                else
+                    using (var stream = response.GetResponseStream())
+                    using (var reader = new StreamReader(stream)) return reader.ReadToEnd();
         }
 
         public bool Init(ProxyCollection proxies)
         {
-            var request = CreateRequest(Root + UrlMain, proxies);
             try
             {
-                using (var response = request.GetResponse())
-                    if (response.ResponseUri != request.RequestUri)
-                        Log.WriteLine("ERROR", ID, "Initialization failed, possibly login failed. Redirected to: {0}",
-                                      response.ResponseUri);
-                    else
-                        using (var stream = response.GetResponseStream())
-                        using (var reader = new StreamReader(stream))
-                        {
-                            var str = reader.ReadToEnd();
-                            var match = IntervalFinder.Match(str);
-                            if (match.Success) Interval = int.Parse(match.Groups[1].Value);
-                            else if (str.Contains("每天可以签到一次。GMT+8时间的0点刷新。")) Interval = -1;
-                            else
-                                Log.WriteLine("WARN", ID,
-                               "Unable to find checkin interval. Please report this site if possible.");
-                            match = LastCheckinTimeFinder.Match(str);
-                            if (!match.Success) throw new FormatException("Unable to find last checkin time.");
-                            LastCheckinTime = DateTime.Parse(match.Groups[1].Value);
-                            return true;
-                        }
+                var str = ReadAll(Root + UrlMain, proxies);
+                var match = IntervalFinder.Match(str);
+                if (match.Success) Interval = int.Parse(match.Groups[1].Value);
+                else if (str.Contains("每天可以签到一次。GMT+8时间的0点刷新。")) Interval = -1;
+                else
+                    Log.WriteLine("WARN", ID,
+                   "Unable to find checkin interval. Please report this site if possible.");
+                match = LastCheckinTimeFinder.Match(str);
+                if (!match.Success) throw new FormatException("Unable to find last checkin time.");
+                LastCheckinTime = DateTime.Parse(match.Groups[1].Value);
+                return true;
             }
             catch (WebException exc)
             {
@@ -168,40 +187,30 @@ namespace Mygod.SSPanel.Checkin
             var url = UrlCheckin;
             if (string.IsNullOrWhiteSpace(url)) url = "/user/" + (string.IsNullOrWhiteSpace(UserName) ? "_" : "do") +
                     "checkin.php";  // check for old style
-            var request = CreateRequest(Root + url, proxies);
             try
             {
-                using (var response = request.GetResponse())
-                    if (response.ResponseUri != request.RequestUri)
-                        Log.WriteLine("ERROR", ID, "Checkin failed, possibly login failed. Redirected to: {0}",
-                                      response.ResponseUri);
-                    else
-                        using (var stream = response.GetResponseStream())
-                        using (var reader = new StreamReader(stream))
-                        {
-                            var str = reader.ReadToEnd();
-                            var match = ResultAnalyzer.Match(str);
-                            if (match.Success)
-                            {
-                                var bandwidth = long.Parse(match.Groups[2].Value);
-                                if (bandwidth == 0)
-                                {
-                                    Log.WriteLine("WARN", ID, "Checkin succeeded but got 0MB. Reiniting.");
-                                    return Init(proxies);
-                                }
-                                LastCheckinTime = DateTime.Now;
-                                BandwidthCount += bandwidth;
-                                ++CheckinCount;
-                                Log.WriteLine("INFO", ID, "Checkin succeeded, got {0}MB.", bandwidth);
-                                return true;
-                            }
-                            if (str.Contains("window.location='index.php';"))
-                            {
-                                Log.WriteLine("WARN", ID, "Checkin failed. Reiniting.");
-                                return Init(proxies);
-                            }
-                            Log.WriteLine("ERROR", ID, "Checkin failed. Unknown response: {0}", str);
-                        }
+                var str = ReadAll(Root + url, proxies);
+                var match = ResultAnalyzer.Match(str);
+                if (match.Success)
+                {
+                    var bandwidth = long.Parse(match.Groups[2].Value);
+                    if (bandwidth == 0)
+                    {
+                        Log.WriteLine("WARN", ID, "Checkin succeeded but got 0MB. Reiniting.");
+                        return Init(proxies);
+                    }
+                    LastCheckinTime = DateTime.Now;
+                    BandwidthCount += bandwidth;
+                    ++CheckinCount;
+                    Log.WriteLine("INFO", ID, "Checkin succeeded, got {0}MB.", bandwidth);
+                    return true;
+                }
+                if (str.Contains("window.location='index.php';"))
+                {
+                    Log.WriteLine("WARN", ID, "Checkin failed. Reiniting.");
+                    return Init(proxies);
+                }
+                Log.WriteLine("ERROR", ID, "Checkin failed. Unknown response: {0}", str);
             }
             catch (WebException exc)
             {
@@ -214,6 +223,33 @@ namespace Mygod.SSPanel.Checkin
                 Log.WriteLine("ERROR", ID, "Checkin failed. Message: {0}", exc.Message);
             }
             return false;
+        }
+
+        public string FetchNodes(ProxyCollection proxies, ParallelOptions options)
+        {
+            var result = new StringBuilder();
+            try
+            {
+                var nothing = true;
+                Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies), NodeFinder).OfType<Match>(), options,
+                                 node =>
+                {
+                    nothing = false;
+                    var str = ReadAll(Root + string.Format(UrlNode, node.Groups[1].Value), proxies);
+                    var match = NodeRawAnalyzer.Match(str);
+                    if (!match.Success && (match = NodeAnalyzer.Match(str)).Success)
+                        match = NodeRawAnalyzer.Match("ss://" + match.Groups[1].Value);
+                    if (match.Success) lock (result) result.AppendLine($"{{\"server\":\"{match.Groups[3].Value}\"," +
+                        $"\"server_port\":{match.Groups[4].Value},\"password\":\"{match.Groups[2].Value}\",\"method\":\"" +
+                        $"{match.Groups[1].Value.Trim()}\",\"remarks\":\"{ID}\"}},");
+                });
+                if (nothing) throw new Exception("Nothing found on this site.");
+            }
+            catch (Exception exc)
+            {
+                Log.ConsoleLine($"({ID}) WARNING: {exc.GetMessage()}");
+            }
+            return result.ToString();
         }
     }
 
