@@ -52,8 +52,8 @@ namespace Mygod.SSPanel.Checkin
                 NeedsRefetch = false;
             }
             else
-                Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(), ParallelOptions,
-                                 site =>
+                Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(),
+                                 ParallelOptions, site =>
                 {
                     lock (queue) queue.Remove(site);
                     try
@@ -116,7 +116,8 @@ namespace Mygod.SSPanel.Checkin
 
         public int CompareTo(Site other)
         {
-            return NextCheckinTime.CompareTo(other.NextCheckinTime);
+            var result = NextCheckinTime.CompareTo(other.NextCheckinTime);
+            return result == 0 ? string.Compare(ID, other.ID, StringComparison.Ordinal) : result;
         }
 
         [XmlIgnore] private CookieContainer cookie;
