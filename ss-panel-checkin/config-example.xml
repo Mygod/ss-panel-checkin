@@ -4,13 +4,19 @@
   <!-- Add zero or more proxy using the following format -->
   <Proxy ID="My Proxy" Address="http://www.myproxy.com:8080" />
   <!-- Add one or more site using the following format -->
-  <Site ID="Site name" Root="http://example.com" UID="1" UserEmail="b598e776@opayq.com"
+  <Site ID="example.com" Root="http://example.com" UID="1" UserEmail="b598e776@opayq.com"
         UserPwd="my_lame_encrypted_password" Proxy="My Proxy" />
-  <Site ID="A really customized site" Root="http://yolo.org" UrlMain="/user" UrlCheckin="/user/checkin">
+  <Site ID="yolo.org-user1" Root="http://www.yolo.org" UrlMain="/user" UrlCheckin="/user/checkin">
     <Cookie Name="session_id" Value="the_quick_brown_fox_jumps_over_the_lazy_dog" />
+  </Site>
+  <Site ID="yolo.org-user2" Root="http://www.yolo.org" UrlMain="/user" UrlCheckin="/user/checkin">
+    <Cookie Name="session_id" Value="this_session_has_not_expired_yet" />
+    <Cookie Name="another_useless_cookie" Value="Tralala" />
   </Site>
   <!--
   # Descriptions for some of the attributes
+    ID:
+      This will be displayed everywhere. Duplicated IDs is highly discouraged! Just don't!
     Root:
       The root of the ss-panel site. You should not include strings like `user/index.php`, keep everything before that
       instead.
