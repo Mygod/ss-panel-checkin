@@ -196,7 +196,8 @@ namespace Mygod.SSPanel.Checkin
 
         public bool DoCheckin(ProxyCollection proxies)
         {
-            if (!(Ready || Init(proxies)) || NextCheckinTime > DateTime.Now) return false;
+            if (!Ready) return Init(proxies);
+            if (NextCheckinTime > DateTime.Now) return false;
             var url = UrlCheckin;
             if (string.IsNullOrWhiteSpace(url)) url = "/user/" + (string.IsNullOrWhiteSpace(UserName) ? "_" : "do") +
                     "checkin.php";  // check for old style
