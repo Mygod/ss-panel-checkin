@@ -136,11 +136,11 @@ namespace Mygod.SSPanel.Checkin
                         if (failCount < 10) ++failCount;
                     }
                     else failCount = 0; // reset counter
-                    var t = DateTime.Now - lastUpdateCheckTime + Day;
+                    var t = lastUpdateCheckTime + Day - DateTime.Now;
                     if (t < span) span = t;
                     var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
                     if (span < min) span = min;
-                    if (failed) Log.ConsoleLine("Some sites has failed. Retrying in {0} seconds...", span.TotalSeconds);
+                    if (failed) Log.ConsoleLine("Something has failed. Retrying in {0} seconds...", span.TotalSeconds);
                     if (running) Terminator.WaitOne(span);
                 }
                 else
