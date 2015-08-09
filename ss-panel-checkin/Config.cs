@@ -268,9 +268,10 @@ namespace Mygod.SSPanel.Checkin
                         if (match == null) return;
                     }
                     nothing = false;
-                    var remarks = match.Groups[3].Value.Contains(ID, StringComparison.OrdinalIgnoreCase)
-                        ? string.Empty : $",\"remarks\":\"{ID}\"";
-                    lock (result) result.AppendLine($"{{\"server\":\"{match.Groups[3].Value}\",\"server_port\":" +
+                    var server = match.Groups[3].Value;
+                    var remarks = server.Contains(ID, StringComparison.OrdinalIgnoreCase) ? string.Empty
+                                    : $",\"remarks\":\"{ID}\"";
+                    lock (result) result.AppendLine($"{{\"server\":\"{server}\",\"server_port\":" +
                         $"{match.Groups[4].Value},\"password\":\"{match.Groups[2].Value}\",\"method\":\"" +
                         $"{match.Groups[1].Value.Trim()}\"{remarks}}},");
                 });
