@@ -150,7 +150,7 @@ namespace Mygod.SSPanel.Checkin
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex("({\"msg\":\"\\\\u83b7\\\\u5f97\\\\u4e86|alert\\(\"签到成功，获得了)(\\d+) ?MB" +
                 "(\\\\u6d41\\\\u91cf\"}|流量!\"\\))", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-            NodeRawAnalyzer = new Regex(@"ss://(.+?):(.+?)@([A-Za-z0-9_\.\-]+?):(\d+)",
+            NodeRawAnalyzer = new Regex(@"ss://(.+?):(.+?)@([A-Za-z0-9_\-]+\.[A-Za-z0-9_\.\-]+):(\d+)",
                                         RegexOptions.Compiled | RegexOptions.IgnoreCase),
             NodeAnalyzer = new Regex(@"ss://([A-Za-z0-9+/=]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -268,9 +268,11 @@ namespace Mygod.SSPanel.Checkin
                         if (match == null) return;
                     }
                     nothing = false;
+                    var remarks = match.Groups[3].Value.Contains(ID, StringComparison.OrdinalIgnoreCase)
+                        ? string.Empty : $",\"remarks\":\"{ID}\"";
                     lock (result) result.AppendLine($"{{\"server\":\"{match.Groups[3].Value}\",\"server_port\":" +
                         $"{match.Groups[4].Value},\"password\":\"{match.Groups[2].Value}\",\"method\":\"" +
-                        $"{match.Groups[1].Value.Trim()}\",\"remarks\":\"{ID}\"}},");
+                        $"{match.Groups[1].Value.Trim()}\"{remarks}}},");
                 });
                 if (nothing) throw new Exception("Nothing found on this site.");
             }
