@@ -22,8 +22,8 @@ namespace Mygod.SSPanel.Checkin
         {
             (config = XmlSerialization.DeserializeFromFile<Config>
                 (path = args == null || args.Count <= 0 ? "config.xml" : args[0]) ?? new Config()).Init();
-            Log.WriteLine("INFO", "Main", "ss-panel-checkin V{0} initialized, compiled on {1}.",
-                          CurrentApp.Version, CurrentApp.CompilationTime);
+            Log.WriteLine("INFO", "Main",
+                $"ss-panel-checkin V{CurrentApp.Version} initialized, compiled on {CurrentApp.CompilationTime}.");
         }
 
         private static void Main(string[] args)
@@ -59,7 +59,7 @@ namespace Mygod.SSPanel.Checkin
                         Terminator.Set();
                         break;
                     case ConsoleKey.S:
-                        Log.ConsoleLine("ID\tAverage\tTotal{0}{1}", Environment.NewLine, string.Join(
+                        Log.ConsoleLine("ID\tAverage\tTotal" + Environment.NewLine + string.Join(
                             Environment.NewLine, from site in config.Sites
                                                  let avg = (double)site.BandwidthCount / site.CheckinCount
                                                  orderby avg descending
@@ -122,13 +122,12 @@ namespace Mygod.SSPanel.Checkin
                         {
                             var url = WebsiteManager.Url;
                             if (!string.IsNullOrWhiteSpace(url))
-                                Log.WriteLine("INFO", "Main", "Update available. Download at: {0}", url);
+                                Log.WriteLine("INFO", "Main", "Update available. Download at: " + url);
                             lastUpdateCheckTime = DateTime.Now;
                         }
                         catch (Exception exc)
                         {
-                            Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: {0}",
-                                          exc.GetMessage());
+                            Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: " + exc.GetMessage());
                             failed = true;
                         }
                     if (failed)
@@ -140,7 +139,7 @@ namespace Mygod.SSPanel.Checkin
                     if (t < span) span = t;
                     var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
                     if (span < min) span = min;
-                    if (failed) Log.ConsoleLine("Something has failed. Retrying in {0} seconds...", span.TotalSeconds);
+                    if (failed) Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
                     if (running) Terminator.WaitOne(span);
                 }
                 else

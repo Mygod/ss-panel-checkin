@@ -186,11 +186,11 @@ namespace Mygod.SSPanel.Checkin
             {
                 var response = exc.Response as HttpWebResponse;
                 if (response != null && response.StatusCode == HttpStatusCode.NotFound) throw;
-                Log.WriteLine("ERROR", ID, "Initialization failed. Message: {0}", exc.Message);
+                Log.WriteLine("ERROR", ID, $"Initialization failed. Message: {exc.Message}");
             }
             catch (IOException exc)
             {
-                Log.WriteLine("ERROR", ID, "Checkin failed. Message: {0}", exc.Message);
+                Log.WriteLine("ERROR", ID, $"Checkin failed. Message: {exc.Message}");
             }
             return false;
         }
@@ -217,7 +217,7 @@ namespace Mygod.SSPanel.Checkin
                     LastCheckinTime = DateTime.Now;
                     BandwidthCount += bandwidth;
                     ++CheckinCount;
-                    Log.WriteLine("INFO", ID, "Checkin succeeded, got {0}MB.", bandwidth);
+                    Log.WriteLine("INFO", ID, $"Checkin succeeded, got {bandwidth}MB.");
                     return true;
                 }
                 if (str.Contains("window.location='index.php';"))
@@ -225,17 +225,17 @@ namespace Mygod.SSPanel.Checkin
                     Log.WriteLine("WARN", ID, "Checkin failed. Reiniting.");
                     return Init(proxies);
                 }
-                Log.WriteLine("ERROR", ID, "Checkin failed. Unknown response: {0}", str);
+                Log.WriteLine("ERROR", ID, "Checkin failed. Unknown response: " + str);
             }
             catch (WebException exc)
             {
                 var response = exc.Response as HttpWebResponse;
                 if (response != null && response.StatusCode == HttpStatusCode.NotFound) throw;
-                Log.WriteLine("ERROR", ID, "Checkin failed. Message: {0}", exc.Message);
+                Log.WriteLine("ERROR", ID, "Checkin failed. Message: " + exc.Message);
             }
             catch (IOException exc)
             {
-                Log.WriteLine("ERROR", ID, "Checkin failed. Message: {0}", exc.Message);
+                Log.WriteLine("ERROR", ID, "Checkin failed. Message: " + exc.Message);
             }
             return false;
         }

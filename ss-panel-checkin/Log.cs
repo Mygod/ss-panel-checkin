@@ -18,9 +18,9 @@ namespace Mygod.SSPanel.Checkin
                 FileWriter.WriteLine(message);
             }
         }
-        public static void WriteLine(string type, string id, string message, params object[] args)
+        public static void WriteLine(string type, string id, string message)
         {
-            WriteLine(string.Format("[{0}] ({2}) {1}: {3}", DateTime.Now, type, id, string.Format(message, args)));
+            WriteLine(string.Format("[{0}] ({2}) {1}: {3}", DateTime.Now, type, id, message));
         }
 
         public static void ConsoleLine(string message, params object[] args)
