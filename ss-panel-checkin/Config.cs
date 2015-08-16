@@ -105,7 +105,7 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute, DefaultValue("/user/{0}")] public string UrlNode = "/user/{0}";
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute, DefaultValue(false)] public bool Disabled;
-        [XmlAttribute] public DateTime LastCheckinTime;
+        [XmlAttribute, DefaultValue(default(DateTime)] public DateTime LastCheckinTime;
         [XmlAttribute, DefaultValue(22)] public int Interval = 22;
         [XmlAttribute, DefaultValue(0)] public long BandwidthCount, CheckinCount;
         public DateTime NextCheckinTime => Interval == -1
