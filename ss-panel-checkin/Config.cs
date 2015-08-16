@@ -66,7 +66,7 @@ namespace Mygod.SSPanel.Checkin
                         Log.WriteLine("FATAL", site.ID, exc.GetMessage());
                     }
                 });
-            return queue.Count == 0 ? DateTime.MinValue : queue.First().NextCheckinTime;
+            return queue.Count == 0 ? default(DateTime) : queue.First().NextCheckinTime;
         }
 
         public void FetchNodes(string path)
@@ -105,12 +105,12 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute, DefaultValue("/user/{0}")] public string UrlNode = "/user/{0}";
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute, DefaultValue(false)] public bool Disabled;
-        [XmlAttribute] public DateTime LastCheckinTime = DateTime.MinValue;
-        [XmlAttribute] public int Interval = 22;
-        [XmlAttribute] public long BandwidthCount, CheckinCount;
+        [XmlAttribute] public DateTime LastCheckinTime;
+        [XmlAttribute, DefaultValue(22)] public int Interval = 22;
+        [XmlAttribute, DefaultValue(0)] public long BandwidthCount, CheckinCount;
         public DateTime NextCheckinTime => Interval == -1
             ? LastCheckinTime.Date.AddDays(1) : LastCheckinTime.AddHours(Interval);
-        public bool Ready => LastCheckinTime > DateTime.MinValue;
+        public bool Ready => LastCheckinTime > default(DateTime);
 
         [XmlElement("Cookie")] public CustomCookie[] AdditionalCookies;
 

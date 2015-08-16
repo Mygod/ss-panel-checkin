@@ -91,7 +91,7 @@ namespace Mygod.SSPanel.Checkin
 
         private static void BackgroundWork()
         {
-            DateTime lastUpdateCheckTime = DateTime.MinValue, nextCheckinTime = DateTime.MinValue;
+            DateTime lastUpdateCheckTime = default(DateTime), nextCheckinTime = default(DateTime);
             var failCount = 0;
             var random = new Random();
             while (running)
@@ -105,7 +105,7 @@ namespace Mygod.SSPanel.Checkin
                         config.IsDirty = false;
                         XmlSerialization.SerializeToFile(path, config);
                     }
-                    if (next == DateTime.MinValue)
+                    if (next == default(DateTime))
                     {
                         Log.WriteLine("WARN", "Main", "No sites configured or all of them has failed.");
                         span = TimeSpan.MaxValue;
