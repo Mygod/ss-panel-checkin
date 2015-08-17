@@ -269,11 +269,10 @@ namespace Mygod.SSPanel.Checkin
                     }
                     nothing = false;
                     var server = match.Groups[3].Value;
-                    var remarks = server.Contains(ID, StringComparison.OrdinalIgnoreCase) ? string.Empty
-                                    : $",\"remarks\":\"{ID}\"";
+                    var remarks = server.Contains(ID, StringComparison.OrdinalIgnoreCase) ? string.Empty : ID;
                     lock (result) result.AppendLine($"{{\"server\":\"{server}\",\"server_port\":" +
                         $"{match.Groups[4].Value},\"password\":\"{match.Groups[2].Value}\",\"method\":\"" +
-                        $"{match.Groups[1].Value.Trim()}\"{remarks}}},");
+                        $"{match.Groups[1].Value.Trim()}\",\"remarks\":\"{remarks}\"}},");
                 });
                 if (nothing) throw new Exception("Nothing found on this site.");
             }
