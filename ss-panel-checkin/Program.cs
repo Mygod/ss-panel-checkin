@@ -59,11 +59,13 @@ namespace Mygod.SSPanel.Checkin
                         Terminator.Set();
                         break;
                     case ConsoleKey.S:
-                        Log.ConsoleLine("ID\tAverage\tTotal" + Environment.NewLine + string.Join(
+                        Log.ConsoleLine("ID\tAverage/day\tAverage/checkin\tTotal" + Environment.NewLine + string.Join(
                             Environment.NewLine, from site in config.Sites
-                                                 let avg = (double)site.BandwidthCount / site.CheckinCount
-                                                 orderby avg descending
-                                                 select $"{site.ID}\t{avg}\t{site.BandwidthCount}"));
+                                                 let avg = site.BandwidthCount * 24D /
+                                                    (site.Interval < 0 ? 24 : site.Interval) / site.CheckinCount
+                                                 orderby avg descending select site.ID +
+                                                 $"\t{avg:0.##}\t{(double)site.BandwidthCount / site.CheckinCount:0.##}\t" +
+                                                 site.BandwidthCount));
                         break;
                     case ConsoleKey.T:
                         config.TestProxies();
