@@ -154,17 +154,26 @@ namespace Mygod.SSPanel.Checkin
                                         RegexOptions.Compiled | RegexOptions.IgnoreCase),
             NodeAnalyzer = new Regex(@"ss://([A-Za-z0-9+/=]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private string ReadAll(string url, ProxyCollection proxies)
+        private string ReadAll(string url, ProxyCollection proxies, int retries = 1)
         {
-            var request = WebRequest.CreateHttp(url);
-            request.CookieContainer = Cookie;
-            if (proxies.Contains(Proxy)) request.Proxy = proxies[Proxy].ToProxy();
-            using (var response = request.GetResponse())
-                if (response.ResponseUri != request.RequestUri)
-                    throw new IOException($"Redirected to: {response.ResponseUri}. Possibly login failed.");
-                else
-                    using (var stream = response.GetResponseStream())
-                    using (var reader = new StreamReader(stream)) return reader.ReadToEnd();
+        retry:
+            try
+            {
+                var request = WebRequest.CreateHttp(url);
+                request.CookieContainer = Cookie;
+                if (proxies.Contains(Proxy)) request.Proxy = proxies[Proxy].ToProxy();
+                using (var response = request.GetResponse())
+                    if (response.ResponseUri != request.RequestUri)
+                        throw new IOException($"Redirected to: {response.ResponseUri}. Possibly login failed.");
+                    else
+                        using (var stream = response.GetResponseStream())
+                        using (var reader = new StreamReader(stream)) return reader.ReadToEnd();
+            }
+            catch (WebException)
+            {
+                if (--retries > 0) goto retry;
+                throw;
+            }
         }
 
         public bool Init(ProxyCollection proxies)
@@ -246,10 +255,10 @@ namespace Mygod.SSPanel.Checkin
             try
             {
                 var nothing = true;
-                Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies), NodeFinder).OfType<Match>()
+                Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies, 4), NodeFinder).OfType<Match>()
                     .Select(match => match.Groups[1].Value).Distinct(), options, node =>
                 {
-                    var str = ReadAll(Root + string.Format(UrlNode, node), proxies);
+                    var str = ReadAll(Root + string.Format(UrlNode, node), proxies, 4);
                     var match = NodeRawAnalyzer.Match(str);
                     if (!match.Success)
                     {
