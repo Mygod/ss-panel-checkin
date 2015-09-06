@@ -287,7 +287,7 @@ namespace Mygod.SSPanel.Checkin
             }
             catch (Exception exc)
             {
-                Log.ConsoleLine($"({ID}) WARNING: {exc.GetMessage()}");
+                Log.ConsoleLine($"({ID}) WARNING: {exc.Message}");
             }
             return result.ToString();
         }
