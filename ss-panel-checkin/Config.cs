@@ -145,7 +145,7 @@ namespace Mygod.SSPanel.Checkin
             }
         }
 
-        private static readonly Regex IntervalFinder = new Regex(@"(\d+)小时内?可以签到一次", RegexOptions.Compiled),
+        private static readonly Regex IntervalFinder = new Regex(@"(\d+)小时内?只?可以签到一次", RegexOptions.Compiled),
             LastCheckinTimeFinder = new Regex("上次签到时间：?<code>([^<]+?)</code>",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex("({\"msg\":\"\\\\u83b7\\\\u5f97\\\\u4e86|alert\\(\"签到成功，获得了)(\\d+) ?MB" +
