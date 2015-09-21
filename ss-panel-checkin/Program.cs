@@ -142,7 +142,7 @@ namespace Mygod.SSPanel.Checkin
                     var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
                     if (span < min) span = min;
                     if (failed) Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
-                    if (running) Terminator.WaitOne(span);
+                    if (running && !config.NeedsRefetch) Terminator.WaitOne(span);
                 }
                 else
                 {
