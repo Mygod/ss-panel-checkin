@@ -13,7 +13,7 @@ namespace Mygod.SSPanel.Checkin
     static class Program
     {
         private static string path;
-        private static Config config;
+        private static volatile Config config;
         private static volatile bool running = true, forceUpdate;
         private static readonly AutoResetEvent Terminator = new AutoResetEvent(false);
         private static readonly TimeSpan Day = TimeSpan.FromDays(1);
