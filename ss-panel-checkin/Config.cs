@@ -291,6 +291,11 @@ namespace Mygod.SSPanel.Checkin
             }
             return result.ToString();
         }
+
+        public override string ToString()
+        {
+            return $"{ID} ({NextCheckinTime})";
+        }
     }
 
     public class ProxyCollection : KeyedCollection<string, Proxy>
