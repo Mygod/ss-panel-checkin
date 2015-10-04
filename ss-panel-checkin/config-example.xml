@@ -31,6 +31,15 @@
       Url for checkin. You can find that on the user center.
       Default: (null)
         * Auto detect whether it's `/user/_checkin.php` or `/user/docheckin.php`.
+    UrlNodes:
+      Url where you can find all the nodes.
+      Default: `/user/node.php`
+    NodeFinder:
+      A regular expression that finds all the node in that page.
+      Default: `node_qr\.php\?id=\d+`
+    UrlNode:
+      The replacement for node finder which turns out to be an URL where you can find JSON configuration for each node.
+      Default: `/user/$&amp;`
     Proxy:
       You can specify the id of which proxy to use. If the specified id was not found, system proxy will be used. If the
       specified proxy doesn't have an address, direct connection will be used.

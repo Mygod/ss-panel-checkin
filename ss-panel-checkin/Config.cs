@@ -101,8 +101,8 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute, DefaultValue("/user/index.php")] public string UrlMain = "/user/index.php";
         [XmlAttribute] public string UrlCheckin;
         [XmlAttribute, DefaultValue("/user/node.php")] public string UrlNodes = "/user/node.php";
-        [XmlAttribute, DefaultValue(@"(node_qr\.php\?id=\d+)")] public string NodeFinder = @"(node_qr\.php\?id=\d+)";
-        [XmlAttribute, DefaultValue("/user/{0}")] public string UrlNode = "/user/{0}";
+        [XmlAttribute, DefaultValue(@"node_qr\.php\?id=\d+")] public string NodeFinder = @"node_qr\.php\?id=\d+";
+        [XmlAttribute, DefaultValue("/user/$&")] public string UrlNode = "/user/$&";
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute, DefaultValue(false)] public bool Disabled;
         [XmlAttribute, DefaultValue(typeof(DateTime), "")] public DateTime LastCheckinTime;
@@ -256,13 +256,13 @@ namespace Mygod.SSPanel.Checkin
             {
                 var nothing = true;
                 Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies, 4), NodeFinder).OfType<Match>()
-                    .Select(match => match.Groups[1].Value).Distinct(), options, node =>
+                    .Distinct(), options, match =>
                 {
-                    var str = ReadAll(Root + string.Format(UrlNode, node), proxies, 4);
-                    var match = NodeRawAnalyzer.Match(str);
-                    if (!match.Success)
+                    var str = ReadAll(Root + match.Result(UrlNode), proxies, 4);
+                    var node = NodeRawAnalyzer.Match(str);
+                    if (!node.Success)
                     {
-                        match = NodeAnalyzer.Matches(str).OfType<Match>().Select(m =>
+                        node = NodeAnalyzer.Matches(str).OfType<Match>().Select(m =>
                         {
                             try
                             {
@@ -274,14 +274,14 @@ namespace Mygod.SSPanel.Checkin
                                 return null;
                             }
                         }).FirstOrDefault(m => m?.Success == true);
-                        if (match == null) return;
+                        if (node == null) return;
                     }
                     nothing = false;
-                    var server = match.Groups[3].Value;
+                    var server = node.Groups[3].Value;
                     var remarks = server.Contains(ID, StringComparison.OrdinalIgnoreCase) ? string.Empty : ID;
                     lock (result) result.AppendLine($"{{\"server\":\"{server}\",\"server_port\":" +
-                        $"{match.Groups[4].Value},\"password\":\"{match.Groups[2].Value}\",\"method\":\"" +
-                        $"{match.Groups[1].Value.Trim()}\",\"remarks\":\"{remarks}\"}},");
+                        $"{node.Groups[4].Value},\"password\":\"{node.Groups[2].Value}\",\"method\":\"" +
+                        $"{node.Groups[1].Value.Trim()}\",\"remarks\":\"{remarks}\"}},");
                 });
                 if (nothing) throw new Exception("Nothing found on this site.");
             }
