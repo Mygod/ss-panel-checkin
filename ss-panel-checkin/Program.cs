@@ -12,6 +12,7 @@ namespace Mygod.SSPanel.Checkin
 {
     static class Program
     {
+        private static readonly object BusyLock = new object();
         private static string path;
         private static volatile Config config;
         private static volatile bool running = true, forceUpdate;
@@ -33,9 +34,9 @@ namespace Mygod.SSPanel.Checkin
             Init(args);
             var background = new Thread(BackgroundWork);
             background.Start();
-            Log.ConsoleLine("Available actions:{0}[A]ctivate worker{0}Re[f]etch all sites' checkin time{0}" +
-                            "Fetch [n]odes{0}[R]eload config{0}[S]tatistics{0}Speed [t]est{0}[Q]uit",
-                            Environment.NewLine + "  ");
+            Log.ConsoleLine("Available actions:{0}[A]ctivate worker (useless if busy){0}" +
+                            "Re[f]etch all sites' checkin time{0}Fetch [n]odes{0}[R]eload config{0}[S]tatistics{0}" +
+                            "Speed [t]est{0}[Q]uit", Environment.NewLine + "  ");
             var key = Console.ReadKey(true).Key;
             while (key != ConsoleKey.Q)
             {
@@ -46,26 +47,32 @@ namespace Mygod.SSPanel.Checkin
                         Terminator.Set();
                         break;
                     case ConsoleKey.F:
-                        config.NeedsRefetch = true;
-                        Terminator.Set();
+                        lock (BusyLock)
+                        {
+                            config.NeedsRefetch = true;
+                            Terminator.Set();
+                        }
                         break;
                     case ConsoleKey.N:
                         config.FetchNodes("nodes.json");
                         Log.ConsoleLine("Saved to nodes.json.");
                         break;
                     case ConsoleKey.R:
-                        Init(args);
-                        forceUpdate = true;
-                        Terminator.Set();
+                        lock (BusyLock)
+                        {
+                            Init(args);
+                            forceUpdate = true;
+                            Terminator.Set();
+                        }
                         break;
                     case ConsoleKey.S:
                         Log.ConsoleLine("ID\tAverage/day\tAverage/checkin\tTotal" + Environment.NewLine + string.Join(
                             Environment.NewLine, from site in config.Sites
                                                  let avg = site.BandwidthCount * 24D /
                                                     (site.Interval < 0 ? 24 : site.Interval) / site.CheckinCount
-                                                 orderby avg descending select site.ID +
-                                                 $"\t{avg:0.##}\t{(double)site.BandwidthCount / site.CheckinCount:0.##}\t" +
-                                                 site.BandwidthCount));
+                                                 orderby avg descending select site.ID + '\t' + 
+                                                 $"{avg:0.##}\t{(double)site.BandwidthCount / site.CheckinCount:0.##}" +
+                                                 '\t' + site.BandwidthCount));
                         break;
                     case ConsoleKey.T:
                         config.TestProxies();
@@ -100,48 +107,53 @@ namespace Mygod.SSPanel.Checkin
                 if (NetworkTester.IsNetworkAvailable())
                 {
                     TimeSpan span;
-                    var failed = false;
-                    var next = config.DoCheckin();
-                    if (config.IsDirty)
+                    lock (BusyLock)
                     {
-                        config.IsDirty = false;
-                        XmlSerialization.SerializeToFile(path, config);
-                    }
-                    if (next == default(DateTime))
-                    {
-                        Log.WriteLine("WARN", "Main", "No sites configured or all of them has failed.");
-                        span = TimeSpan.MaxValue;
-                    }
-                    else
-                    {
-                        span = next - DateTime.Now;
-                        if (next <= DateTime.Now) failed = true;
-                        else if (forceUpdate || next != nextCheckinTime)
-                            Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
-                    }
-                    if (DateTime.Now - lastUpdateCheckTime > Day)
-                        try
+                        var failed = false;
+                        var next = config.DoCheckin();
+                        if (config.IsDirty)
                         {
-                            var url = WebsiteManager.Url;
-                            if (!string.IsNullOrWhiteSpace(url))
-                                Log.WriteLine("INFO", "Main", "Update available. Download at: " + url);
-                            lastUpdateCheckTime = DateTime.Now;
+                            config.IsDirty = false;
+                            XmlSerialization.SerializeToFile(path, config);
                         }
-                        catch (Exception exc)
+                        if (next == default(DateTime))
                         {
-                            Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: " + exc.GetMessage());
-                            failed = true;
+                            Log.WriteLine("WARN", "Main", "No sites configured or all of them has failed.");
+                            span = TimeSpan.MaxValue;
                         }
-                    if (failed)
-                    {
-                        if (failCount < 10) ++failCount;
+                        else
+                        {
+                            span = next - DateTime.Now;
+                            if (next <= DateTime.Now) failed = true;
+                            else if (forceUpdate || next != nextCheckinTime)
+                                Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
+                        }
+                        if (DateTime.Now - lastUpdateCheckTime > Day)
+                            try
+                            {
+                                var url = WebsiteManager.Url;
+                                if (!string.IsNullOrWhiteSpace(url))
+                                    Log.WriteLine("INFO", "Main", "Update available. Download at: " + url);
+                                lastUpdateCheckTime = DateTime.Now;
+                            }
+                            catch (Exception exc)
+                            {
+                                Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: " +
+                                    exc.GetMessage());
+                                failed = true;
+                            }
+                        if (failed)
+                        {
+                            if (failCount < 10) ++failCount;
+                        }
+                        else failCount = 0; // reset counter
+                        var t = lastUpdateCheckTime + Day - DateTime.Now;
+                        if (t < span) span = t;
+                        var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
+                        if (span < min) span = min;
+                        if (failed)
+                            Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
                     }
-                    else failCount = 0; // reset counter
-                    var t = lastUpdateCheckTime + Day - DateTime.Now;
-                    if (t < span) span = t;
-                    var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
-                    if (span < min) span = min;
-                    if (failed) Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
                     if (running && !config.NeedsRefetch) Terminator.WaitOne(span);
                 }
                 else
