@@ -26,6 +26,8 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute, DefaultValue(16)] public int MaxConnections = 16;
         public ParallelOptions ParallelOptions => new ParallelOptions {MaxDegreeOfParallelism = MaxConnections};
 
+        public DateTime NextCheckinTime => queue.First().NextCheckinTime;
+
         public void Init()
         {
             queue = new SortedSet<Site>(Sites.Where(site => !site.Disabled));
@@ -33,6 +35,7 @@ namespace Mygod.SSPanel.Checkin
 
         public DateTime DoCheckin()
         {
+            var result = default(DateTime);
             if (NeedsRefetch)
             {
                 queue.Clear();
@@ -51,9 +54,8 @@ namespace Mygod.SSPanel.Checkin
                 Log.WriteLine("INFO", "Main", "Manual refetch finished.");
                 NeedsRefetch = false;
             }
-            else
-                Parallel.ForEach(queue.TakeWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(),
-                                 ParallelOptions, site =>
+            else Parallel.ForEach(queue.TakeWhile(site => (result = site.NextCheckinTime) <= DateTime.Now).ToList(),
+                ParallelOptions, site =>
                 {
                     lock (queue) queue.Remove(site);
                     try
@@ -66,7 +68,7 @@ namespace Mygod.SSPanel.Checkin
                         Log.WriteLine("FATAL", site.ID, exc.GetMessage());
                     }
                 });
-            return queue.Count == 0 ? default(DateTime) : queue.First().NextCheckinTime;
+            return result;
         }
 
         public void FetchNodes(string path)

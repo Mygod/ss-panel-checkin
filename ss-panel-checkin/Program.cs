@@ -124,7 +124,7 @@ namespace Mygod.SSPanel.Checkin
                         else
                         {
                             span = next - DateTime.Now;
-                            if (next <= DateTime.Now) failed = true;
+                            if (config.NextCheckinTime <= DateTime.Now) failed = true;
                             else if (forceUpdate || next != nextCheckinTime)
                                 Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
                         }
@@ -142,17 +142,16 @@ namespace Mygod.SSPanel.Checkin
                                     exc.GetMessage());
                                 failed = true;
                             }
+                        var t = lastUpdateCheckTime + Day - DateTime.Now;
+                        if (t < span) span = t;
                         if (failed)
                         {
                             if (failCount < 10) ++failCount;
+                            var max = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
+                            if (span > max) span = max;
+                            Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
                         }
                         else failCount = 0; // reset counter
-                        var t = lastUpdateCheckTime + Day - DateTime.Now;
-                        if (t < span) span = t;
-                        var min = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
-                        if (span < min) span = min;
-                        if (failed)
-                            Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
                     }
                     if (running && !config.NeedsRefetch) Terminator.WaitOne(span);
                 }
