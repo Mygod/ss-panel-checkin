@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading;
+using System.Threading.Tasks;
 using Mygod.Net;
 using Mygod.Net.NetworkInformation;
 using Mygod.Windows;
@@ -103,13 +104,31 @@ namespace Mygod.SSPanel.Checkin
             DateTime lastUpdateCheckTime = default(DateTime), nextCheckinTime = default(DateTime);
             var failCount = 0;
             var random = new Random();
+            bool failed;
+            Action checkForUpdates = () =>
+            {
+                try
+                {
+                    var url = WebsiteManager.Url;
+                    if (!string.IsNullOrWhiteSpace(url))
+                        Log.WriteLine("INFO", "Main", "Update available. Download at: " + url);
+                    lastUpdateCheckTime = DateTime.Now;
+                }
+                catch (Exception exc)
+                {
+                    Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: " + exc.GetMessage());
+                    failed = true;
+                }
+            };
             while (running)
                 if (NetworkTester.IsNetworkAvailable())
                 {
                     TimeSpan span;
+                    Task task = null;
+                    failed = false;
                     lock (BusyLock)
                     {
-                        var failed = false;
+                        if (DateTime.Now - lastUpdateCheckTime > Day) task = Task.Factory.StartNew(checkForUpdates);
                         var next = config.DoCheckin();
                         if (config.IsDirty)
                         {
@@ -128,20 +147,7 @@ namespace Mygod.SSPanel.Checkin
                             else if (forceUpdate || next != nextCheckinTime)
                                 Log.ConsoleLine("Checkin finished. Next checkin time: {0}", nextCheckinTime = next);
                         }
-                        if (DateTime.Now - lastUpdateCheckTime > Day)
-                            try
-                            {
-                                var url = WebsiteManager.Url;
-                                if (!string.IsNullOrWhiteSpace(url))
-                                    Log.WriteLine("INFO", "Main", "Update available. Download at: " + url);
-                                lastUpdateCheckTime = DateTime.Now;
-                            }
-                            catch (Exception exc)
-                            {
-                                Log.WriteLine("WARN", "Main", "Checking for updates failed. Message: " +
-                                    exc.GetMessage());
-                                failed = true;
-                            }
+                        task?.Wait();
                         var t = lastUpdateCheckTime + Day - DateTime.Now;
                         if (t < span) span = t;
                         if (failed)
