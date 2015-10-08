@@ -158,7 +158,7 @@ namespace Mygod.SSPanel.Checkin
                         if (failed || span < TimeSpan.Zero)
                         {
                             var max = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
-                            if (span > max) span = max;
+                            if (span < TimeSpan.Zero || span > max) span = max;
                             Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
                         }
                     }
