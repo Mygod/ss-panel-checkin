@@ -153,11 +153,14 @@ namespace Mygod.SSPanel.Checkin
                         if (failed)
                         {
                             if (failCount < 10) ++failCount;
+                        }
+                        else failCount = 0; // reset counter
+                        if (failed || span < TimeSpan.Zero)
+                        {
                             var max = TimeSpan.FromMilliseconds(random.Next(1000, 1000 << failCount));
                             if (span > max) span = max;
                             Log.ConsoleLine($"Something has failed. Retrying in {span.TotalSeconds} seconds...");
                         }
-                        else failCount = 0; // reset counter
                     }
                     if (running && !config.NeedsRefetch) Terminator.WaitOne(span);
                 }
