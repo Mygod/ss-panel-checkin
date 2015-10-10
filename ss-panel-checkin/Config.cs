@@ -147,8 +147,8 @@ namespace Mygod.SSPanel.Checkin
             }
         }
 
-        private static readonly Regex IntervalFinder = new Regex(@"(\d+)小时内?只?可以签到一次", RegexOptions.Compiled),
-            LastCheckinTimeFinder = new Regex("上次签到时间：?<code>([^<]+?)</code>",
+        private static readonly Regex IntervalFinder = new Regex(@"(\d+)小时内?，?只?可以签到一次", RegexOptions.Compiled),
+            LastCheckinTimeFinder = new Regex("上次签到时间：?(<code>)?([^<]+?)</",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex("({\"msg\":\"\\\\u83b7\\\\u5f97\\\\u4e86|alert\\(\"签到成功，获得了)(\\d+) ?MB" +
                 "(\\\\u6d41\\\\u91cf\"}|流量!\"\\))", RegexOptions.Compiled | RegexOptions.IgnoreCase),
@@ -190,7 +190,7 @@ namespace Mygod.SSPanel.Checkin
                    "Unable to find checkin interval. Please report this site if possible.");
                 match = LastCheckinTimeFinder.Match(str);
                 if (!match.Success) throw new FormatException("Unable to find last checkin time.");
-                LastCheckinTime = DateTime.Parse(match.Groups[1].Value);
+                LastCheckinTime = DateTime.Parse(match.Groups[2].Value);
                 return !Ready || DoCheckin(proxies);
             }
             catch (WebException exc)
