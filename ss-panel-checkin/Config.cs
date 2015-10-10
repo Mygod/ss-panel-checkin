@@ -152,8 +152,9 @@ namespace Mygod.SSPanel.Checkin
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex("({\"msg\":\"\\\\u83b7\\\\u5f97\\\\u4e86|alert\\(\"签到成功，获得了)(\\d+) ?MB" +
                 "(\\\\u6d41\\\\u91cf\"}|流量!\"\\))", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-            NodeRawAnalyzer = new Regex(@"ss://(.+?):(.+?)@([A-Za-z0-9_\-]+\.[A-Za-z0-9_\.\-]+):(\d+)",
-                                        RegexOptions.Compiled | RegexOptions.IgnoreCase),
+            NodeRawAnalyzer = new Regex(
+                @"ss://(.+?):(.+?)@(\[([0-9a-f:]+)\]|[0-9a-f:]+|[a-z0-9_\-]+\.[a-z0-9_\.\-]+):(\d+)",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase),
             NodeAnalyzer = new Regex(@"ss://([A-Za-z0-9+/=]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private string ReadAll(string url, ProxyCollection proxies, int retries = 1)
@@ -279,10 +280,10 @@ namespace Mygod.SSPanel.Checkin
                         if (node == null) return;
                     }
                     nothing = false;
-                    var server = node.Groups[3].Value;
+                    var server = node.Groups[node.Groups[4].Success ? 4 : 3].Value;
                     var remarks = server.Contains(ID, StringComparison.OrdinalIgnoreCase) ? string.Empty : ID;
                     lock (result) result.AppendLine($"{{\"server\":\"{server}\",\"server_port\":" +
-                        $"{node.Groups[4].Value},\"password\":\"{node.Groups[2].Value}\",\"method\":\"" +
+                        $"{node.Groups[5].Value},\"password\":\"{node.Groups[2].Value}\",\"method\":\"" +
                         $"{node.Groups[1].Value.Trim()}\",\"remarks\":\"{remarks}\"}},");
                 });
                 if (nothing) throw new Exception("Nothing found on this site.");
