@@ -200,7 +200,8 @@ namespace Mygod.SSPanel.Checkin
                 match = LastCheckinTimeFinder.Match(str);
                 if (!match.Success) throw new FormatException("Unable to find last checkin time.");
                 LastCheckinTime = DateTime.Parse(match.Groups[2].Value);
-                return !Ready || DoCheckin(proxies);
+                if (Ready) DoCheckin(proxies);
+                return true;
             }
             catch (WebException exc)
             {
