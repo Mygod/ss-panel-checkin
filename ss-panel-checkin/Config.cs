@@ -101,7 +101,7 @@ namespace Mygod.SSPanel.Checkin
     {
         [XmlAttribute] public string ID, Root, UID, UserEmail, UserName, UserPwd;
         [XmlAttribute, DefaultValue("/user/index.php")] public string UrlMain = "/user/index.php";
-        [XmlAttribute] public string UrlCheckin;
+        [XmlAttribute] public string UrlCheckin, PostCheckin;
         [XmlAttribute, DefaultValue("/user/node.php")] public string UrlNodes = "/user/node.php";
         [XmlAttribute, DefaultValue(@"node_qr\.php\?id=\d+")] public string NodeFinder = @"node_qr\.php\?id=\d+";
         [XmlAttribute, DefaultValue("/user/$&")] public string UrlNode = "/user/$&";
@@ -157,7 +157,7 @@ namespace Mygod.SSPanel.Checkin
                 RegexOptions.Compiled | RegexOptions.IgnoreCase),
             NodeAnalyzer = new Regex(@"ss://([A-Za-z0-9+/=]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private string ReadAll(string url, ProxyCollection proxies, int retries = 1)
+        private string ReadAll(string url, ProxyCollection proxies, string post = null, int retries = 1)
         {
         retry:
             try
@@ -166,6 +166,13 @@ namespace Mygod.SSPanel.Checkin
                 request.Method = "POST";
                 request.CookieContainer = Cookie;
                 if (proxies.Contains(Proxy)) request.Proxy = proxies[Proxy].ToProxy();
+                if (!string.IsNullOrEmpty(post))
+                {
+                    request.ContentType = "application/x-www-form-urlencoded";
+                    var data = Encoding.UTF8.GetBytes(post);
+                    request.ContentLength = data.Length;
+                    using (var stream = request.GetRequestStream()) stream.Write(data, 0, data.Length);
+                }
                 using (var response = request.GetResponse())
                     if (response.ResponseUri != request.RequestUri)
                         throw new IOException($"Redirected to: {response.ResponseUri}. Possibly login failed.");
@@ -217,7 +224,7 @@ namespace Mygod.SSPanel.Checkin
                     "checkin.php";  // check for old style
             try
             {
-                var str = ReadAll(Root + url, proxies);
+                var str = ReadAll(Root + url, proxies, PostCheckin);
                 var match = ResultAnalyzer.Match(str);
                 if (match.Success)
                 {
@@ -233,7 +240,7 @@ namespace Mygod.SSPanel.Checkin
                     Log.WriteLine("INFO", ID, $"Checkin succeeded, got {bandwidth}MB.");
                     return true;
                 }
-                if (str.Contains("window.location='index.php';"))
+                if (str.Contains("window.location='index.php';") || str.Contains("请等待至您的签到时间再进行签到"))
                 {
                     Log.WriteLine("WARN", ID, "Checkin failed. Reiniting.");
                     return Init(proxies);
@@ -259,10 +266,10 @@ namespace Mygod.SSPanel.Checkin
             try
             {
                 var nothing = true;
-                Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies, 4), NodeFinder).OfType<Match>()
+                Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies, null, 4), NodeFinder).OfType<Match>()
                     .Distinct(), options, match =>
                 {
-                    var str = ReadAll(Root + match.Result(UrlNode), proxies, 4);
+                    var str = ReadAll(Root + match.Result(UrlNode), proxies, null, 4);
                     var node = NodeRawAnalyzer.Match(str);
                     if (!node.Success)
                     {
