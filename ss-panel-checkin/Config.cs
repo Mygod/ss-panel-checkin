@@ -174,6 +174,7 @@ namespace Mygod.SSPanel.Checkin
                     request.ContentLength = data.Length;
                     using (var stream = request.GetRequestStream()) stream.Write(data, 0, data.Length);
                 }
+                else request.ContentLength = 0;
                 using (var response = request.GetResponse())
                     if (response.ResponseUri != request.RequestUri)
                         throw new IOException($"Redirected to: {response.ResponseUri}. Possibly login failed.");
@@ -204,7 +205,7 @@ namespace Mygod.SSPanel.Checkin
                    "Unable to find checkin interval. Please report this site if possible.");
                 match = LastCheckinTimeFinder.Match(str);
                 if (!match.Success) throw new FormatException("Unable to find last checkin time.");
-                LastCheckinTime = DateTime.Parse(match.Groups[3].Value);
+                LastCheckinTime = DateTime.Parse(match.Groups[4].Value);
                 if (Ready) DoCheckin(proxies);
                 return true;
             }
