@@ -147,9 +147,9 @@ namespace Mygod.SSPanel.Checkin
             }
         }
 
-        private static readonly Regex IntervalFinder = new Regex(@"(\d+)小时内?，?只?可以签到一次",
+        private static readonly Regex IntervalFinder = new Regex(@"(\d+)(小时|天)内?，?只?可以(签到|领取)一次",
                 RegexOptions.Compiled),
-            LastCheckinTimeFinder = new Regex("(上次签到时间：?|Last Time: )(<code>)?(.+?)</",
+            LastCheckinTimeFinder = new Regex("(上次(签到|领取)时间：?|Last Time: )(<code>)?(.+?)</",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex("(\\\\u83b7\\\\u5f97\\\\u4e86|Won |alert\\(\"签到成功，获得了)(\\d+) ?(MB|Coin)",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase),
@@ -194,7 +194,11 @@ namespace Mygod.SSPanel.Checkin
             {
                 var str = ReadAll(Root + UrlMain, proxies);
                 var match = IntervalFinder.Match(str);
-                if (match.Success) Interval = int.Parse(match.Groups[1].Value);
+                if (match.Success)
+                {
+                    Interval = int.Parse(match.Groups[1].Value);
+                    if (match.Groups[2].Value == "天") Interval *= 24;
+                }
                 else if (str.Contains("每天可以签到一次。GMT+8时间的0点刷新。")) Interval = -1;
                 else Log.WriteLine("WARN", ID,
                    "Unable to find checkin interval. Please report this site if possible.");
