@@ -164,17 +164,16 @@ namespace Mygod.SSPanel.Checkin
             try
             {
                 var request = WebRequest.CreateHttp(url);
-                request.Method = "POST";
                 request.CookieContainer = Cookie;
                 if (proxies.Contains(Proxy)) request.Proxy = proxies[Proxy].ToProxy();
-                if (!string.IsNullOrEmpty(post))
+                if (post != null)
                 {
+                    request.Method = "POST";
                     request.ContentType = "application/x-www-form-urlencoded";
                     var data = Encoding.UTF8.GetBytes(post);
                     request.ContentLength = data.Length;
                     using (var stream = request.GetRequestStream()) stream.Write(data, 0, data.Length);
                 }
-                else request.ContentLength = 0;
                 using (var response = request.GetResponse())
                     if (response.ResponseUri != request.RequestUri)
                         throw new IOException($"Redirected to: {response.ResponseUri}. Possibly login failed.");
