@@ -274,9 +274,9 @@ namespace Mygod.SSPanel.Checkin
             {
                 var nothing = true;
                 Parallel.ForEach(Regex.Matches(ReadAll(Root + UrlNodes, proxies, null, 4), NodeFinder).OfType<Match>()
-                    .Distinct(), options, match =>
+                    .Select(match => match.Result(UrlNode)).Distinct(), options, path =>
                 {
-                    var str = ReadAll(Root + match.Result(UrlNode), proxies, null, 4);
+                    var str = ReadAll(Root + path, proxies, null, 4);
                     var node = NodeRawAnalyzer.Match(str);
                     if (!node.Success)
                     {
