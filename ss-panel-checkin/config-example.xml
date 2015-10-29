@@ -31,6 +31,9 @@
       Url for checkin. You can find that on the user center.
       Default: (null)
         * Auto detect whether it's `/user/_checkin.php` or `/user/docheckin.php`.
+    PostCheckin:
+      If this is set to something or empty, the method used will be POST instead of GET. And additional post data may
+      apply.
     UrlNodes:
       Url where you can find all the nodes.
       Default: `/user/node.php`
