@@ -109,11 +109,11 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
         [XmlAttribute, DefaultValue(SiteStatus.Enabled)] public SiteStatus Status;
         [XmlAttribute, DefaultValue(typeof(DateTime), "")] public DateTime LastCheckinTime;
-        [XmlAttribute, DefaultValue(22)] public int Interval = 22;
+        [XmlAttribute, DefaultValue(0)] public int Interval;
         [XmlAttribute, DefaultValue(0)] public long BandwidthCount, CheckinCount;
         public DateTime NextCheckinTime => Interval == -1
             ? LastCheckinTime.Date.AddDays(1) : LastCheckinTime.AddHours(Interval);
-        public bool Ready => LastCheckinTime > default(DateTime);
+        public bool Ready => Interval != 0;
 
         [XmlElement("Cookie")] public CustomCookie[] AdditionalCookies;
 
@@ -201,12 +201,19 @@ namespace Mygod.SSPanel.Checkin
                     if (match.Groups[2].Value == "天") Interval *= 24;
                 }
                 else if (str.Contains("每天可以签到一次。GMT+8时间的0点刷新。")) Interval = -1;
-                else Log.WriteLine("WARN", ID,
-                   "Unable to find checkin interval. Please report this site if possible.");
+                else
+                {
+                    Interval = 22;
+                    Log.WriteLine("WARN", ID,
+                        "Unable to find checkin interval, assuming 22h. Please report this site if possible.");
+                }
                 match = LastCheckinTimeFinder.Match(str);
-                if (!match.Success) throw new FormatException("Unable to find last checkin time.");
-                LastCheckinTime = DateTime.Parse(match.Groups[4].Value);
-                if (Ready) DoCheckin(proxies);
+                if (match.Success)
+                {
+                    LastCheckinTime = DateTime.Parse(match.Groups[4].Value);
+                    if (Ready) DoCheckin(proxies);
+                }
+                else Log.WriteLine("WARN", ID, "Unable to find last checkin time.");
                 return true;
             }
             catch (WebException exc)
