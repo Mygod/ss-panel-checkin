@@ -30,7 +30,7 @@ namespace Mygod.SSPanel.Checkin
 
         public void Init()
         {
-            queue = new SortedSet<Site>(Sites.Where(site => !site.Disabled));
+            queue = new SortedSet<Site>(Sites.Where(site => site.Status == SiteStatus.Enabled));
         }
 
         public DateTime DoCheckin()
@@ -74,7 +74,8 @@ namespace Mygod.SSPanel.Checkin
         public void FetchNodes(string path)
         {
             using (var writer = new StreamWriter(path) {AutoFlush = true})
-                Parallel.ForEach(queue.SkipWhile(site => site.NextCheckinTime <= DateTime.Now).ToList(),
+                Parallel.ForEach(queue.SkipWhile(site => site.NextCheckinTime <= DateTime.Now)
+                                      .Concat(Sites.Where(site => site.Status == SiteStatus.NodesOnly)).ToList(),
                                  ParallelOptions, site =>
                 {
                     var result = site.FetchNodes(Proxies, ParallelOptions);
@@ -106,7 +107,7 @@ namespace Mygod.SSPanel.Checkin
         [XmlAttribute, DefaultValue(@"node_qr\.php\?id=\d+")] public string NodeFinder = @"node_qr\.php\?id=\d+";
         [XmlAttribute, DefaultValue("/user/$&")] public string UrlNode = "/user/$&";
         [XmlAttribute, DefaultValue("Default")] public string Proxy = "Default";
-        [XmlAttribute, DefaultValue(false)] public bool Disabled;
+        [XmlAttribute, DefaultValue(SiteStatus.Enabled)] public SiteStatus Status;
         [XmlAttribute, DefaultValue(typeof(DateTime), "")] public DateTime LastCheckinTime;
         [XmlAttribute, DefaultValue(22)] public int Interval = 22;
         [XmlAttribute, DefaultValue(0)] public long BandwidthCount, CheckinCount;
@@ -314,6 +315,12 @@ namespace Mygod.SSPanel.Checkin
         {
             return $"{ID} ({NextCheckinTime})";
         }
+    }
+
+    public enum SiteStatus
+    {
+        // ReSharper disable once UnusedMember.Global
+        Enabled, Disabled, NodesOnly
     }
 
     public class ProxyCollection : KeyedCollection<string, Proxy>

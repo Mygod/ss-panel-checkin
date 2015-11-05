@@ -46,8 +46,9 @@
     Proxy:
       You can specify the id of which proxy to use. If the specified id was not found, system proxy will be used. If the
       specified proxy doesn't have an address, direct connection will be used.
-    Disabled:
-      You can fill in `true` to make ss-panel-checkin ignore some of the sites while keep them in the XML. Useful for
-      sites that are temporary down.
+    Status:
+      Enabled - Default.
+      NodesOnly - Checkin disabled.
+      Disabled - Everything disabled.
   -->
 </Config>
