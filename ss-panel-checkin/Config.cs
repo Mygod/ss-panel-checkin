@@ -255,8 +255,8 @@ namespace Mygod.SSPanel.Checkin
                     Log.WriteLine("INFO", ID, $"Checkin succeeded, got {bandwidth}MB.");
                     return true;
                 }
-                if (str.Contains("window.location='index.php';") || str.Contains("请等待至您的签到时间再进行签到") ||
-                    str.Contains(@"\u7b7e\u8fc7\u5230\u4e86"))
+                if (str == "null" || str.Contains("window.location='index.php';") ||
+                    str.Contains("请等待至您的签到时间再进行签到") || str.Contains(@"\u7b7e\u8fc7\u5230\u4e86"))
                 {
                     Log.WriteLine("WARN", ID, "Checkin failed. Reiniting.");
                     return Init(proxies);
