@@ -166,6 +166,7 @@ namespace Mygod.SSPanel.Checkin
             {
                 var request = WebRequest.CreateHttp(url);
                 request.CookieContainer = Cookie;
+                request.Referer = Root + UrlMain;
                 if (proxies.Contains(Proxy)) request.Proxy = proxies[Proxy].ToProxy();
                 if (post != null)
                 {
