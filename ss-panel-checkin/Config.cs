@@ -152,7 +152,7 @@ namespace Mygod.SSPanel.Checkin
                 RegexOptions.Compiled),
             LastCheckinTimeFinder = new Regex("(上次(签到|领取)时间：?|Last Time: )(<code>)?(.+?)</",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
-            ResultAnalyzer = new Regex("(\\\\u83b7\\\\u5f97\\\\u4e86|Won |alert\\(\"签到成功，获得了)(\\d+) ?(MB|Coin)",
+            ResultAnalyzer = new Regex("(\\\\u83b7\\\\u5f97\\\\u4e86 ?|Won |alert\\(\"签到成功，获得了)(\\d+) ?(MB|Coin)",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase),
             NodeRawAnalyzer = new Regex(
                 @"ss://(.+?):(.+?)@(\[([0-9a-f:]+)\]|[0-9a-f:]+|[a-z0-9_\-]+\.[a-z0-9_\.\-]+):(\d+)",
@@ -256,7 +256,8 @@ namespace Mygod.SSPanel.Checkin
                     return true;
                 }
                 if (str == "null" || str.Contains("window.location='index.php';") ||
-                    str.Contains("请等待至您的签到时间再进行签到") || str.Contains(@"\u7b7e\u8fc7\u5230\u4e86"))
+                    str.Contains("请等待至您的签到时间再进行签到") || str.Contains(@"\u7b7e\u8fc7\u5230\u4e86") ||
+                    str.Contains(@"\u7b7e\u5230\u8fc7\u4e86"))
                 {
                     Log.WriteLine("WARN", ID, "Checkin failed. Reiniting.");
                     return Init(proxies);
