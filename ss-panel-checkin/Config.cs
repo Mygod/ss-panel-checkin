@@ -152,7 +152,7 @@ namespace Mygod.SSPanel.Checkin
                 RegexOptions.Compiled),
             LastCheckinTimeFinder = new Regex("(上次(签到|领取)时间：?|Last Time: )(<code>)?(.+?)</",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
-            ResultAnalyzer = new Regex("(\\\\u83b7\\\\u5f97\\\\u4e86 ?|Won |alert\\(\"签到成功，获得了)(\\d+) ?(MB|Coin)",
+            ResultAnalyzer = new Regex("(\\\\u83b7\\\\u5f97\\\\u4e86 ?|Won |获得了)(\\d+) ?(MB|Coin)",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase),
             NodeRawAnalyzer = new Regex(
                 @"ss://(.+?):(.+?)@(\[([0-9a-f:]+)\]|[0-9a-f:]+|[a-z0-9_\-]+\.[a-z0-9_\.\-]+):(\d+)",
