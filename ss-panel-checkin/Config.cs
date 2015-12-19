@@ -150,7 +150,7 @@ namespace Mygod.SSPanel.Checkin
 
         private static readonly Regex IntervalFinder = new Regex(@"(\d+)(小时|天)内?，?只?可以(签到|领取)一次",
                 RegexOptions.Compiled),
-            LastCheckinTimeFinder = new Regex("(上次(签到|领取)时间：?|Last Time: )(<code>)?(.+?)</",
+            LastCheckinTimeFinder = new Regex("(上次(签到|领取)时间：?|Last Time:)\s*(<code>)?(.+?)</",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline),
             ResultAnalyzer = new Regex(@"(\\u83b7\\u5f97\\u4e86 ?|Won |获得了 ?)(\d+) ?(MB|Coin)",
                 RegexOptions.Compiled | RegexOptions.IgnoreCase),
