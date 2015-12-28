@@ -247,7 +247,8 @@ namespace Mygod.SSPanel.Checkin
                     if (bandwidth == 0)
                     {
                         Log.WriteLine("WARN", ID, "Checkin succeeded but got 0MB. Reiniting.");
-                        return Init(proxies);
+                        Interval = 0;
+                        return false;
                     }
                     LastCheckinTime = DateTime.Now;
                     BandwidthCount += bandwidth;
@@ -260,7 +261,8 @@ namespace Mygod.SSPanel.Checkin
                     str.Contains(@"\u7b7e\u8fc7\u5230\u4e86") || str.Contains(@"\u7b7e\u5230\u8fc7\u4e86"))
                 {
                     Log.WriteLine("WARN", ID, "Checkin failed. Reiniting.");
-                    return Init(proxies);
+                    Interval = 0;
+                    return false;
                 }
                 Log.WriteLine("ERROR", ID, "Checkin failed. Unknown response: " + str);
             }
