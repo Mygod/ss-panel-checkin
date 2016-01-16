@@ -68,10 +68,11 @@ namespace Mygod.SSPanel.Checkin
                         break;
                     case ConsoleKey.S:
                         Log.ConsoleLine("ID\tAverage/day\tAverage/checkin\tTotal" + Environment.NewLine + string.Join(
-                            Environment.NewLine, from site in config.Sites
+                            Environment.NewLine, from site in config.Sites where site.CheckinCount != 0
                                                  let avg = site.BandwidthCount * 24D /
                                                     (site.Interval < 0 ? 24 : site.Interval) / site.CheckinCount
-                                                 orderby avg descending select site.ID + '\t' + 
+                                                 orderby avg descending select site.ID +
+                                                    (site.Status == SiteStatus.Disabled ? "*" : string.Empty) + '\t' + 
                                                  $"{avg:0.##}\t{(double)site.BandwidthCount / site.CheckinCount:0.##}" +
                                                  '\t' + site.BandwidthCount));
                         break;
