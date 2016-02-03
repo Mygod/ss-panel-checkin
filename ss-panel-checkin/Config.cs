@@ -256,6 +256,13 @@ namespace Mygod.SSPanel.Checkin
                     Log.WriteLine("INFO", ID, $"Checkin succeeded, got {bandwidth}MB.");
                     return true;
                 }
+                if (str.Contains(@"\u7b7e\u5230\u6210\u529f"))
+                {
+                    LastCheckinTime = DateTime.Now;
+                    ++CheckinCount;
+                    Log.WriteLine("INFO", ID, "Checkin succeeded.");
+                    return true;
+                }
                 if (str == "null" || str.Contains("window.location='index.php';") ||
                     str.Contains("请等待至您的签到时间再进行签到") || str.Contains("现在无法签到") ||
                     str.Contains(@"\u7b7e\u8fc7\u5230\u4e86") || str.Contains(@"\u7b7e\u5230\u8fc7\u4e86"))
