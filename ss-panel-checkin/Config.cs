@@ -39,7 +39,7 @@ namespace Mygod.SSPanel.Checkin
             if (NeedsRefetch)
             {
                 queue.Clear();
-                Parallel.ForEach(queue, ParallelOptions, site =>
+                Parallel.ForEach(Sites.Where(site => site.Status == SiteStatus.Enabled), ParallelOptions, site =>
                 {
                     try
                     {
