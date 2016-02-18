@@ -211,7 +211,8 @@ namespace Mygod.SSPanel.Checkin
                 match = LastCheckinTimeFinder.Match(str);
                 if (match.Success)
                 {
-                    LastCheckinTime = DateTime.Parse(match.Groups[4].Value);
+                    if (!DateTime.TryParse(match.Groups[4].Value, out LastCheckinTime))
+                        LastCheckinTime = DateTime.MinValue;
                     if (Ready) DoCheckin(proxies);
                 }
                 else Log.WriteLine("WARN", ID, "Unable to find last checkin time.");
