@@ -369,6 +369,7 @@ namespace Mygod.SSPanel.Checkin
         {
             var request = WebRequest.CreateHttp(TestUrl);
             request.Proxy = ToProxy();
+            request.Timeout = request.ReadWriteTimeout = TestTimeout;
             long size = 0;
             var thread = new Thread(() =>
             {
