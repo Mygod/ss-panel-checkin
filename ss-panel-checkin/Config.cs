@@ -74,9 +74,7 @@ namespace Mygod.SSPanel.Checkin
         public void FetchNodes(string path)
         {
             using (var writer = new StreamWriter(path) {AutoFlush = true})
-                Parallel.ForEach(queue.SkipWhile(site => site.NextCheckinTime <= DateTime.Now)
-                                      .Concat(Sites.Where(site => site.Status == SiteStatus.NodesOnly)).ToList(),
-                                 ParallelOptions, site =>
+                Parallel.ForEach(Sites.Where(site => site.Status != SiteStatus.Disabled), ParallelOptions, site =>
                 {
                     var result = site.FetchNodes(Proxies, ParallelOptions);
                     // ReSharper disable AccessToDisposedClosure
